@@ -88,3 +88,19 @@ onSnapshot(collection(db, "despesas"), (snapshot) => {
 
   document.getElementById("lista-despesas").innerHTML = html;
 });
+let totalReceitas = 0;
+let totalDespesas = 0;
+
+// 🔄 Atualizar resumo
+function atualizarResumo() {
+  const saldo = totalReceitas - totalDespesas;
+
+  document.getElementById("total-receitas").innerText =
+    "Receitas: € " + totalReceitas.toFixed(2);
+
+  document.getElementById("total-despesas").innerText =
+    "Despesas: € " + totalDespesas.toFixed(2);
+
+  document.getElementById("saldo").innerText =
+    "Saldo: € " + saldo.toFixed(2);
+}
