@@ -8,8 +8,10 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 let taxa = 0;
+
 let totalReceitas = 0;
 let totalDespesas = 0;
+let totalDividas = 0;
 
 // =====================
 // 💱 CÂMBIO
@@ -42,10 +44,11 @@ function converterParaEUR(valor, moeda) {
 }
 
 // =====================
-// 📊 RESUMO GLOBAL
+// 📊 RESUMO GLOBAL (ATUALIZADO)
 // =====================
 function atualizarResumo() {
   const saldo = totalReceitas - totalDespesas;
+  const saldoReal = totalReceitas - totalDespesas - totalDividas;
 
   document.getElementById("total-receitas").textContent =
     `Receitas: € ${totalReceitas.toFixed(2)}`;
@@ -53,8 +56,14 @@ function atualizarResumo() {
   document.getElementById("total-despesas").textContent =
     `Despesas: € ${totalDespesas.toFixed(2)}`;
 
+  document.getElementById("total-dividas").textContent =
+    `Dívidas: € ${totalDividas.toFixed(2)}`;
+
   document.getElementById("saldo").textContent =
     `Saldo: € ${saldo.toFixed(2)}`;
+
+  document.getElementById("saldo-real").textContent =
+    `Saldo real (com dívidas): € ${saldoReal.toFixed(2)}`;
 }
 
 // =====================
@@ -186,9 +195,11 @@ window.addDivida = async function () {
 };
 
 // =====================
-// 📋 LISTA DÍVIDAS
+// 📋 LISTA DÍVIDAS + TOTAL
 // =====================
 onSnapshot(collection(db, "dividas"), (snapshot) => {
+  totalDividas = 0;
+
   const container = document.getElementById("lista-dividas");
   let html = "";
 
@@ -202,6 +213,8 @@ onSnapshot(collection(db, "dividas"), (snapshot) => {
 
     const restante = total - pago;
     const progresso = total ? (pago / total) * 100 : 0;
+
+    totalDividas += restante;
 
     html += `
       <div class="card">
@@ -224,6 +237,7 @@ onSnapshot(collection(db, "dividas"), (snapshot) => {
   });
 
   container.innerHTML = html;
+  atualizarResumo();
 });
 
 // =====================
