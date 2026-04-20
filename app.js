@@ -14,8 +14,6 @@ let totalReceitas = 0;
 let totalDespesas = 0;
 let totalDividas = 0;
 
-let grafico;
-
 // =====================
 // HISTÓRICO
 // =====================
@@ -33,12 +31,19 @@ async function log(tipo, colecao, antes, depois) {
 // CÂMBIO
 // =====================
 async function pegarCambio() {
-  const res = await fetch("https://api.exchangerate-api.com/v4/latest/EUR");
-  const data = await res.json();
-  taxa = data?.rates?.BRL || 0;
+  try {
+    const res = await fetch("https://api.exchangerate-api.com/v4/latest/EUR");
+    const data = await res.json();
 
-  document.getElementById("cambio").innerText =
-    `€1 = R$ ${taxa.toFixed(2)}`;
+    taxa = data?.rates?.BRL || 0;
+
+    document.getElementById("cambio").innerText =
+      `€1 = R$ ${taxa.toFixed(2)}`;
+
+  } catch (err) {
+    document.getElementById("cambio").innerText =
+      "Erro ao carregar câmbio";
+  }
 }
 
 pegarCambio();
@@ -50,39 +55,6 @@ function eur(v, m) {
   if (m === "EUR") return v;
   if (m === "BRL") return v / taxa;
   return v;
-}
-
-// =====================
-// GRÁFICO
-// =====================
-function atualizarGrafico() {
-  const ctx = document.getElementById("graficoFinanceiro");
-
-  if (!ctx) return;
-
-  if (grafico) grafico.destroy();
-
-  grafico = new Chart(ctx, {
-    type: "bar",
-    data: {
-      labels: ["Receitas", "Despesas"],
-      datasets: [{
-        label: "€",
-        data: [totalReceitas, totalDespesas],
-        backgroundColor: ["#22c55e", "#ef4444"],
-        borderRadius: 8
-      }]
-    },
-    options: {
-      responsive: true,
-      plugins: {
-        legend: { display: false }
-      },
-      scales: {
-        y: { beginAtZero: true }
-      }
-    }
-  });
 }
 
 // =====================
@@ -106,42 +78,76 @@ function atualizarResumo() {
 
   document.getElementById("saldo-real").innerText =
     `Saldo real (com dívidas): € ${saldoReal.toFixed(2)}`;
-
-  atualizarGrafico();
 }
 
 // =====================
-// RECEITA
+// ➕ RECEITA
 // =====================
 window.addReceita = async function () {
-  const desc = r-desc.value;
-  const val = Number(r-val.value);
-  const moeda = r-moeda.value;
+  const desc = document.getElementById("r-desc").value;
+  const val = Number(document.getElementById("r-val").value);
+  const moeda = document.getElementById("r-moeda").value;
 
   if (!desc || val <= 0) return alert("Preencha corretamente");
 
   await addDoc(collection(db, "receitas"), {
-    desc, val, moeda, criadoEm: Date.now()
+    desc,
+    val,
+    moeda,
+    criadoEm: Date.now()
   });
 
   await log("CREATE", "receitas", null, { desc, val, moeda });
+
+  document.getElementById("r-desc").value = "";
+  document.getElementById("r-val").value = "";
 };
 
 // =====================
-// DESPESA
+// ➖ DESPESA
 // =====================
 window.addDespesa = async function () {
-  const desc = d-desc.value;
-  const val = Number(d-val.value);
-  const moeda = d-moeda.value;
+  const desc = document.getElementById("d-desc").value;
+  const val = Number(document.getElementById("d-val").value);
+  const moeda = document.getElementById("d-moeda").value;
 
   if (!desc || val <= 0) return alert("Preencha corretamente");
 
   await addDoc(collection(db, "despesas"), {
-    desc, val, moeda, criadoEm: Date.now()
+    desc,
+    val,
+    moeda,
+    criadoEm: Date.now()
   });
 
   await log("CREATE", "despesas", null, { desc, val, moeda });
+
+  document.getElementById("d-desc").value = "";
+  document.getElementById("d-val").value = "";
+};
+
+// =====================
+// ➕ DÍVIDA
+// =====================
+window.addDivida = async function () {
+  const desc = document.getElementById("div-desc").value;
+  const valor = Number(document.getElementById("div-valor").value);
+  const moeda = document.getElementById("div-moeda").value;
+
+  if (!desc || valor <= 0) return alert("Preencha corretamente");
+
+  await addDoc(collection(db, "dividas"), {
+    desc,
+    valorOriginal: valor,
+    moeda,
+    pago: 0,
+    criadoEm: Date.now()
+  });
+
+  await log("CREATE", "dividas", null, { desc, valor, moeda });
+
+  document.getElementById("div-desc").value = "";
+  document.getElementById("div-valor").value = "";
 };
 
 // =====================
@@ -174,7 +180,7 @@ window.edit = async function (col, id, data) {
 };
 
 // =====================
-// STREAM RECEITAS
+// RECEITAS STREAM
 // =====================
 onSnapshot(collection(db, "receitas"), (snap) => {
   totalReceitas = 0;
@@ -205,7 +211,7 @@ onSnapshot(collection(db, "receitas"), (snap) => {
 });
 
 // =====================
-// STREAM DESPESAS
+// DESPESAS STREAM
 // =====================
 onSnapshot(collection(db, "despesas"), (snap) => {
   totalDespesas = 0;
@@ -236,7 +242,7 @@ onSnapshot(collection(db, "despesas"), (snap) => {
 });
 
 // =====================
-// STREAM DÍVIDAS
+// DÍVIDAS STREAM
 // =====================
 onSnapshot(collection(db, "dividas"), (snap) => {
   totalDividas = 0;
@@ -252,6 +258,7 @@ onSnapshot(collection(db, "dividas"), (snap) => {
       <div class="card">
         <strong>${d.desc}</strong>
         <p>Total: ${d.moeda} ${d.valorOriginal}</p>
+        <p>Pago: ${d.pago}</p>
 
         <div class="actions">
           <button onclick='edit("dividas","${i.id}",${JSON.stringify(d)})'>Editar</button>
@@ -266,3 +273,22 @@ onSnapshot(collection(db, "dividas"), (snap) => {
 });
 
 // =====================
+// HISTÓRICO
+// =====================
+onSnapshot(collection(db, "historico"), (snap) => {
+  let html = "";
+
+  snap.forEach((i) => {
+    const h = i.data();
+
+    html += `
+      <div class="card">
+        <strong>${h.tipo} - ${h.colecao}</strong>
+        <p>ANTES: ${JSON.stringify(h.antes)}</p>
+        <p>DEPOIS: ${JSON.stringify(h.depois)}</p>
+      </div>
+    `;
+  });
+
+  document.getElementById("lista-historico").innerHTML = html;
+});
