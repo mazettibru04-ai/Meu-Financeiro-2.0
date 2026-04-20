@@ -19,12 +19,25 @@
     <p id="cambio">Carregando...</p>
   </div>
 
-  <!-- RESUMO -->
+  <!-- ===================== -->
+  <!-- RESUMO FINANCEIRO -->
+  <!-- ===================== -->
   <div class="card">
     <h3>📊 Resumo financeiro</h3>
+
     <p id="total-receitas">Receitas: €0</p>
     <p id="total-despesas">Despesas: €0</p>
+
+    <!-- 💡 NOVO: DÍVIDAS -->
+    <p id="total-dividas">Dívidas: €0</p>
+
+    <hr>
+
+    <!-- SALDO REAL -->
     <p id="saldo">Saldo: €0</p>
+
+    <!-- 💡 NOVO: SALDO COM DÍVIDAS -->
+    <p id="saldo-real">Saldo real (com dívidas): €0</p>
   </div>
 
   <!-- ===================== -->
@@ -36,7 +49,6 @@
     <input id="r-desc" placeholder="Descrição">
     <input id="r-val" type="number" placeholder="Valor">
 
-    <!-- MOEDA -->
     <select id="r-moeda">
       <option value="EUR">Euro (€)</option>
       <option value="BRL">Real (R$)</option>
@@ -59,7 +71,6 @@
     <input id="d-desc" placeholder="Descrição">
     <input id="d-val" type="number" placeholder="Valor">
 
-    <!-- MOEDA -->
     <select id="d-moeda">
       <option value="EUR">Euro (€)</option>
       <option value="BRL">Real (R$)</option>
@@ -82,7 +93,6 @@
     <input id="div-desc" placeholder="Ex: Cartão Nubank">
     <input id="div-valor" type="number" placeholder="Valor">
 
-    <!-- MOEDA -->
     <select id="div-moeda">
       <option value="EUR">Euro (€)</option>
       <option value="BRL">Real (R$)</option>
