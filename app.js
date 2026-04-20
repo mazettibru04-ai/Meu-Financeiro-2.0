@@ -17,10 +17,11 @@ async function pegarCambio() {
     const res = await fetch("https://api.exchangerate-api.com/v4/latest/EUR");
     const data = await res.json();
 
-    taxa = data?.rates?.BRL || 0;
+    taxa = data?.rates?.BRL ?? 0;
 
     document.getElementById("cambio").innerText =
       taxa ? `€1 = R$ ${taxa.toFixed(2)}` : "Câmbio indisponível";
+
   } catch (e) {
     console.error(e);
     document.getElementById("cambio").innerText = "Erro ao carregar câmbio";
@@ -45,13 +46,14 @@ function atualizarResumo() {
 
 // ➕ RECEITA
 window.addReceita = async function () {
-  const desc = document.getElementById("r-desc").value.trim();
-  const val = parseFloat(document.getElementById("r-val").value);
+  const btn = event.target;
 
-  if (!desc || isNaN(val) || val <= 0) {
-    alert("Preencha corretamente");
-    return;
-  }
+  const desc = document.getElementById("r-desc").value.trim();
+  const val = Number(document.getElementById("r-val").value);
+
+  if (!desc || isNaN(val) || val <= 0) return alert("Preencha corretamente");
+
+  btn.disabled = true;
 
   await addDoc(collection(db, "receitas"), {
     desc,
@@ -61,17 +63,20 @@ window.addReceita = async function () {
 
   document.getElementById("r-desc").value = "";
   document.getElementById("r-val").value = "";
+
+  btn.disabled = false;
 };
 
 // ➖ DESPESA
 window.addDespesa = async function () {
-  const desc = document.getElementById("d-desc").value.trim();
-  const val = parseFloat(document.getElementById("d-val").value);
+  const btn = event.target;
 
-  if (!desc || isNaN(val) || val <= 0) {
-    alert("Preencha corretamente");
-    return;
-  }
+  const desc = document.getElementById("d-desc").value.trim();
+  const val = Number(document.getElementById("d-val").value);
+
+  if (!desc || isNaN(val) || val <= 0) return alert("Preencha corretamente");
+
+  btn.disabled = true;
 
   await addDoc(collection(db, "despesas"), {
     desc,
@@ -81,6 +86,8 @@ window.addDespesa = async function () {
 
   document.getElementById("d-desc").value = "";
   document.getElementById("d-val").value = "";
+
+  btn.disabled = false;
 };
 
 // 📊 RECEITAS
@@ -90,15 +97,15 @@ onSnapshot(collection(db, "receitas"), (snapshot) => {
 
   snapshot.forEach((docItem) => {
     const r = docItem.data();
-    totalReceitas += r.val || 0;
+    const val = Number(r.val) || 0;
+
+    totalReceitas += val;
 
     html += `
       <div class="card">
-        <strong>${r.desc}</strong>
-        <p>€ ${r.val.toFixed(2)}</p>
-        <small>
-          R$ ${taxa ? (r.val * taxa).toFixed(2) : "..."}
-        </small>
+        <strong>${r.desc || "Sem descrição"}</strong>
+        <p>€ ${val.toFixed(2)}</p>
+        <small>R$ ${taxa ? (val * taxa).toFixed(2) : "..."}</small>
       </div>
     `;
   });
@@ -114,15 +121,15 @@ onSnapshot(collection(db, "despesas"), (snapshot) => {
 
   snapshot.forEach((docItem) => {
     const d = docItem.data();
-    totalDespesas += d.val || 0;
+    const val = Number(d.val) || 0;
+
+    totalDespesas += val;
 
     html += `
       <div class="card">
-        <strong>${d.desc}</strong>
-        <p>€ ${d.val.toFixed(2)}</p>
-        <small>
-          R$ ${taxa ? (d.val * taxa).toFixed(2) : "..."}
-        </small>
+        <strong>${d.desc || "Sem descrição"}</strong>
+        <p>€ ${val.toFixed(2)}</p>
+        <small>R$ ${taxa ? (val * taxa).toFixed(2) : "..."}</small>
       </div>
     `;
   });
@@ -134,12 +141,9 @@ onSnapshot(collection(db, "despesas"), (snapshot) => {
 // 💳 DÍVIDA
 window.addDivida = async function () {
   const desc = document.getElementById("div-desc").value.trim();
-  const valor = parseFloat(document.getElementById("div-valor").value);
+  const valor = Number(document.getElementById("div-valor").value);
 
-  if (!desc || isNaN(valor) || valor <= 0) {
-    alert("Preencha corretamente");
-    return;
-  }
+  if (!desc || isNaN(valor) || valor <= 0) return alert("Preencha corretamente");
 
   await addDoc(collection(db, "dividas"), {
     desc,
@@ -159,14 +163,14 @@ onSnapshot(collection(db, "dividas"), (snapshot) => {
   snapshot.forEach((docItem) => {
     const d = docItem.data();
 
-    const pago = d.pago || 0;
-    const total = d.valorOriginal || 0;
+    const pago = Number(d.pago) || 0;
+    const total = Number(d.valorOriginal) || 0;
     const restante = total - pago;
     const progresso = total > 0 ? (pago / total) * 100 : 0;
 
     html += `
       <div class="card">
-        <strong>${d.desc}</strong>
+        <strong>${d.desc || "Sem descrição"}</strong>
         <p>Total: R$ ${total.toFixed(2)}</p>
         <p>Pago: R$ ${pago.toFixed(2)}</p>
         <p>Falta: R$ ${restante.toFixed(2)}</p>
@@ -187,17 +191,14 @@ onSnapshot(collection(db, "dividas"), (snapshot) => {
 // 💸 PAGAR DÍVIDA
 window.pagarDivida = async function (id, pagoAtual) {
   const input = document.getElementById(`pagar-${id}`);
-  const valor = parseFloat(input.value);
+  const valor = Number(input.value);
 
-  if (isNaN(valor) || valor <= 0) {
-    alert("Digite um valor válido");
-    return;
-  }
+  if (isNaN(valor) || valor <= 0) return alert("Digite um valor válido");
 
   const ref = doc(db, "dividas", id);
 
   await updateDoc(ref, {
-    pago: (pagoAtual || 0) + valor
+    pago: (Number(pagoAtual) || 0) + valor
   });
 
   input.value = "";
