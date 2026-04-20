@@ -5,7 +5,7 @@ body {
 }
 
 .container {
-  max-width: 600px;
+  max-width: 650px;
   margin: auto;
   padding: 20px;
 }
@@ -13,21 +13,45 @@ body {
 .card {
   background: #1e293b;
   padding: 15px;
-  border-radius: 10px;
-  margin-bottom: 10px;
+  border-radius: 12px;
+  margin-bottom: 12px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.3);
 }
 
-input {
+.highlight {
+  border: 1px solid #38bdf8;
+}
+
+input, select {
   width: 100%;
   padding: 10px;
-  margin-bottom: 10px;
+  margin-bottom: 8px;
+  border-radius: 8px;
+  border: none;
 }
 
 button {
   width: 100%;
   padding: 10px;
-  background: green;
+  background: #22c55e;
   border: none;
   color: white;
   cursor: pointer;
+  border-radius: 8px;
+  margin-top: 5px;
+}
+
+button:hover {
+  opacity: 0.9;
+}
+
+.actions {
+  display: flex;
+  gap: 5px;
+}
+
+.actions button {
+  width: 50%;
+  font-size: 12px;
+  background: #334155;
 }
