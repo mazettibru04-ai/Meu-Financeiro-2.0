@@ -174,7 +174,7 @@ onSnapshot(collection(db, "dividas"), (snapshot) => {
         <p>Total: R$ ${d.valorOriginal}</p>
         <p>Pago: R$ ${d.pago}</p>
         <p>Falta: R$ ${restante}</p>
-        <p>€ ${(restante / taxa).toFixed(2)}</p>
+        <p>€ ${taxa ? (restante / taxa).toFixed(2) : "..."}</p>
         <p>Progresso: ${progresso.toFixed(1)}%</p>
 
         <input id="pagar-${doc.id}" type="number" placeholder="Valor pago">
@@ -187,7 +187,6 @@ onSnapshot(collection(db, "dividas"), (snapshot) => {
 });
 
 // 💸 PAGAR DÍVIDA
-import { doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 window.pagarDivida = async function (id, pagoAtual) {
   try {
