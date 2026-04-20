@@ -33,6 +33,7 @@ async function log(tipo, colecao, antes, depois) {
 async function pegarCambio() {
   const res = await fetch("https://api.exchangerate-api.com/v4/latest/EUR");
   const data = await res.json();
+
   taxa = data?.rates?.BRL || 0;
 
   document.getElementById("cambio").innerText =
@@ -57,24 +58,37 @@ function atualizarResumo() {
   const saldo = totalReceitas - totalDespesas;
   const saldoReal = saldo - totalDividas;
 
-  document.getElementById("total-receitas").innerText = `Receitas: € ${totalReceitas.toFixed(2)}`;
-  document.getElementById("total-despesas").innerText = `Despesas: € ${totalDespesas.toFixed(2)}`;
-  document.getElementById("total-dividas").innerText = `Dívidas: € ${totalDividas.toFixed(2)}`;
+  document.getElementById("total-receitas").innerText =
+    `Receitas: € ${totalReceitas.toFixed(2)}`;
 
-  document.getElementById("saldo").innerText = `Saldo: € ${saldo.toFixed(2)}`;
-  document.getElementById("saldo-real").innerText = `Saldo real (com dívidas): € ${saldoReal.toFixed(2)}`;
+  document.getElementById("total-despesas").innerText =
+    `Despesas: € ${totalDespesas.toFixed(2)}`;
+
+  document.getElementById("total-dividas").innerText =
+    `Dívidas: € ${totalDividas.toFixed(2)}`;
+
+  document.getElementById("saldo").innerText =
+    `Saldo: € ${saldo.toFixed(2)}`;
+
+  document.getElementById("saldo-real").innerText =
+    `Saldo real (com dívidas): € ${saldoReal.toFixed(2)}`;
 }
 
 // =====================
 // RECEITA
 // =====================
 window.addReceita = async function () {
-  const desc = r-desc.value;
-  const val = Number(r-val.value);
-  const moeda = r-moeda.value;
+  const desc = document.getElementById("r-desc").value;
+  const val = Number(document.getElementById("r-val").value);
+  const moeda = document.getElementById("r-moeda").value;
 
-  const ref = await addDoc(collection(db, "receitas"), {
-    desc, val, moeda, criadoEm: Date.now()
+  if (!desc || val <= 0) return alert("Preencha corretamente");
+
+  await addDoc(collection(db, "receitas"), {
+    desc,
+    val,
+    moeda,
+    criadoEm: Date.now()
   });
 
   await log("create", "receitas", null, { desc, val, moeda });
@@ -84,19 +98,24 @@ window.addReceita = async function () {
 // DESPESA
 // =====================
 window.addDespesa = async function () {
-  const desc = d-desc.value;
-  const val = Number(d-val.value);
-  const moeda = d-moeda.value;
+  const desc = document.getElementById("d-desc").value;
+  const val = Number(document.getElementById("d-val").value);
+  const moeda = document.getElementById("d-moeda").value;
+
+  if (!desc || val <= 0) return alert("Preencha corretamente");
 
   await addDoc(collection(db, "despesas"), {
-    desc, val, moeda, criadoEm: Date.now()
+    desc,
+    val,
+    moeda,
+    criadoEm: Date.now()
   });
 
   await log("create", "despesas", null, { desc, val, moeda });
 };
 
 // =====================
-// DELETE GENÉRICO
+// DELETE
 // =====================
 window.del = async function (col, id, data) {
   if (!confirm("Tem certeza?")) return;
@@ -106,7 +125,7 @@ window.del = async function (col, id, data) {
 };
 
 // =====================
-// EDIT GENÉRICO
+// EDIT
 // =====================
 window.edit = async function (col, id, data) {
   const desc = prompt("Descrição:", data.desc);
@@ -116,7 +135,10 @@ window.edit = async function (col, id, data) {
 
   const updated = { ...data, desc, val: Number(val) };
 
-  await updateDoc(doc(db, col, id), { desc, val: Number(val) });
+  await updateDoc(doc(db, col, id), {
+    desc,
+    val: Number(val)
+  });
 
   await log("edit", col, data, updated);
 };
@@ -146,7 +168,7 @@ onSnapshot(collection(db, "receitas"), (snap) => {
     `;
   });
 
-  lista-receitas.innerHTML = html;
+  document.getElementById("lista-receitas").innerHTML = html;
   atualizarResumo();
 });
 
@@ -175,7 +197,7 @@ onSnapshot(collection(db, "despesas"), (snap) => {
     `;
   });
 
-  lista-despesas.innerHTML = html;
+  document.getElementById("lista-despesas").innerHTML = html;
   atualizarResumo();
 });
 
@@ -190,7 +212,6 @@ onSnapshot(collection(db, "dividas"), (snap) => {
     const d = i.data();
 
     const total = eur(d.valorOriginal, d.moeda);
-    const pago = eur(d.pago, d.moeda);
 
     totalDividas += total;
 
@@ -206,6 +227,6 @@ onSnapshot(collection(db, "dividas"), (snap) => {
     `;
   });
 
-  lista-dividas.innerHTML = html;
+  document.getElementById("lista-dividas").innerHTML = html;
   atualizarResumo();
 });
