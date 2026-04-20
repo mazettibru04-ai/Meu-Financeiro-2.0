@@ -27,7 +27,7 @@ async function pegarCambio() {
       taxa ? `€1 = R$ ${taxa.toFixed(2)}` : "Câmbio indisponível";
 
   } catch (err) {
-    console.error("Erro câmbio:", err);
+    console.error(err);
     document.getElementById("cambio").innerText = "Erro ao carregar câmbio";
   }
 }
@@ -35,7 +35,7 @@ async function pegarCambio() {
 pegarCambio();
 
 // =====================
-// 💱 CONVERSÃO BASE (EUR)
+// CONVERSÃO
 // =====================
 function converterParaEUR(valor, moeda) {
   if (moeda === "EUR") return valor;
@@ -44,7 +44,7 @@ function converterParaEUR(valor, moeda) {
 }
 
 // =====================
-// 📊 RESUMO GLOBAL (ATUALIZADO)
+// RESUMO
 // =====================
 function atualizarResumo() {
   const saldo = totalReceitas - totalDespesas;
@@ -67,7 +67,7 @@ function atualizarResumo() {
 }
 
 // =====================
-// ➕ RECEITA
+// RECEITA
 // =====================
 window.addReceita = async function () {
   const desc = document.getElementById("r-desc").value.trim();
@@ -88,7 +88,7 @@ window.addReceita = async function () {
 };
 
 // =====================
-// ➖ DESPESA
+// DESPESA
 // =====================
 window.addDespesa = async function () {
   const desc = document.getElementById("d-desc").value.trim();
@@ -109,7 +109,7 @@ window.addDespesa = async function () {
 };
 
 // =====================
-// 📊 RECEITAS STREAM
+// RECEITAS STREAM
 // =====================
 onSnapshot(collection(db, "receitas"), (snapshot) => {
   totalReceitas = 0;
@@ -128,10 +128,9 @@ onSnapshot(collection(db, "receitas"), (snapshot) => {
 
     html += `
       <div class="card">
-        <strong>${r.desc || "Sem descrição"}</strong>
+        <strong>${r.desc}</strong>
         <p>${moeda} ${val.toFixed(2)}</p>
         <small>≈ € ${convertido.toFixed(2)}</small>
-        <small>≈ R$ ${(convertido * taxa).toFixed(2)}</small>
       </div>
     `;
   });
@@ -141,7 +140,7 @@ onSnapshot(collection(db, "receitas"), (snapshot) => {
 });
 
 // =====================
-// 📉 DESPESAS STREAM
+// DESPESAS STREAM
 // =====================
 onSnapshot(collection(db, "despesas"), (snapshot) => {
   totalDespesas = 0;
@@ -160,10 +159,9 @@ onSnapshot(collection(db, "despesas"), (snapshot) => {
 
     html += `
       <div class="card">
-        <strong>${d.desc || "Sem descrição"}</strong>
+        <strong>${d.desc}</strong>
         <p>${moeda} ${val.toFixed(2)}</p>
         <small>≈ € ${convertido.toFixed(2)}</small>
-        <small>≈ R$ ${(convertido * taxa).toFixed(2)}</small>
       </div>
     `;
   });
@@ -173,7 +171,7 @@ onSnapshot(collection(db, "despesas"), (snapshot) => {
 });
 
 // =====================
-// 💳 DÍVIDAS
+// DÍVIDAS
 // =====================
 window.addDivida = async function () {
   const desc = document.getElementById("div-desc").value.trim();
@@ -195,7 +193,7 @@ window.addDivida = async function () {
 };
 
 // =====================
-// 📋 LISTA DÍVIDAS + TOTAL
+// LISTA DÍVIDAS
 // =====================
 onSnapshot(collection(db, "dividas"), (snapshot) => {
   totalDividas = 0;
@@ -205,7 +203,6 @@ onSnapshot(collection(db, "dividas"), (snapshot) => {
 
   snapshot.forEach((item) => {
     const d = item.data();
-
     const moeda = d.moeda || "EUR";
 
     const total = converterParaEUR(Number(d.valorOriginal || 0), moeda);
@@ -214,7 +211,7 @@ onSnapshot(collection(db, "dividas"), (snapshot) => {
     const restante = total - pago;
     const progresso = total ? (pago / total) * 100 : 0;
 
-    totalDividas += restante;
+    totalDividas += total;
 
     html += `
       <div class="card">
@@ -224,7 +221,6 @@ onSnapshot(collection(db, "dividas"), (snapshot) => {
         <p>Pago: ${moeda} ${Number(d.pago || 0).toFixed(2)}</p>
 
         <p>≈ Falta: € ${restante.toFixed(2)}</p>
-        <p>≈ R$ ${(restante * taxa).toFixed(2)}</p>
 
         <input id="pagar-${item.id}" type="number" placeholder="Valor pago">
         <button onclick="pagarDivida('${item.id}', ${d.pago || 0})">
@@ -241,7 +237,7 @@ onSnapshot(collection(db, "dividas"), (snapshot) => {
 });
 
 // =====================
-// 💸 PAGAR DÍVIDA
+// PAGAR DÍVIDA
 // =====================
 window.pagarDivida = async function (id, atual) {
   const input = document.getElementById(`pagar-${id}`);
