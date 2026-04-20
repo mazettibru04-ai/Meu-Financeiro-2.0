@@ -15,7 +15,7 @@ let totalDespesas = 0;
 let totalDividas = 0;
 
 // =====================
-// 📜 HISTÓRICO LOG
+// HISTÓRICO
 // =====================
 async function log(tipo, colecao, antes, depois) {
   await addDoc(collection(db, "historico"), {
@@ -28,12 +28,11 @@ async function log(tipo, colecao, antes, depois) {
 }
 
 // =====================
-// 💱 CÂMBIO
+// CÂMBIO
 // =====================
 async function pegarCambio() {
   const res = await fetch("https://api.exchangerate-api.com/v4/latest/EUR");
   const data = await res.json();
-
   taxa = data?.rates?.BRL || 0;
 
   document.getElementById("cambio").innerText =
@@ -45,10 +44,10 @@ pegarCambio();
 // =====================
 // CONVERSÃO
 // =====================
-function eur(valor, moeda) {
-  if (moeda === "EUR") return valor;
-  if (moeda === "BRL") return valor / taxa;
-  return valor;
+function eur(v, m) {
+  if (m === "EUR") return v;
+  if (m === "BRL") return v / taxa;
+  return v;
 }
 
 // =====================
@@ -78,50 +77,44 @@ function atualizarResumo() {
 // RECEITA
 // =====================
 window.addReceita = async function () {
-  const desc = document.getElementById("r-desc").value;
-  const val = Number(document.getElementById("r-val").value);
-  const moeda = document.getElementById("r-moeda").value;
+  const desc = r-desc.value;
+  const val = Number(r-val.value);
+  const moeda = r-moeda.value;
 
   if (!desc || val <= 0) return alert("Preencha corretamente");
 
-  await addDoc(collection(db, "receitas"), {
-    desc,
-    val,
-    moeda,
-    criadoEm: Date.now()
+  const ref = await addDoc(collection(db, "receitas"), {
+    desc, val, moeda, criadoEm: Date.now()
   });
 
-  await log("create", "receitas", null, { desc, val, moeda });
+  await log("CREATE", "receitas", null, { desc, val, moeda });
 };
 
 // =====================
 // DESPESA
 // =====================
 window.addDespesa = async function () {
-  const desc = document.getElementById("d-desc").value;
-  const val = Number(document.getElementById("d-val").value);
-  const moeda = document.getElementById("d-moeda").value;
+  const desc = d-desc.value;
+  const val = Number(d-val.value);
+  const moeda = d-moeda.value;
 
   if (!desc || val <= 0) return alert("Preencha corretamente");
 
   await addDoc(collection(db, "despesas"), {
-    desc,
-    val,
-    moeda,
-    criadoEm: Date.now()
+    desc, val, moeda, criadoEm: Date.now()
   });
 
-  await log("create", "despesas", null, { desc, val, moeda });
+  await log("CREATE", "despesas", null, { desc, val, moeda });
 };
 
 // =====================
 // DELETE
 // =====================
 window.del = async function (col, id, data) {
-  if (!confirm("Tem certeza?")) return;
+  if (!confirm("Tem certeza que deseja excluir?")) return;
 
   await deleteDoc(doc(db, col, id));
-  await log("delete", col, data, null);
+  await log("DELETE", col, data, null);
 };
 
 // =====================
@@ -140,11 +133,11 @@ window.edit = async function (col, id, data) {
     val: Number(val)
   });
 
-  await log("edit", col, data, updated);
+  await log("EDIT", col, data, updated);
 };
 
 // =====================
-// RECEITAS STREAM
+// RECEITAS
 // =====================
 onSnapshot(collection(db, "receitas"), (snap) => {
   totalReceitas = 0;
@@ -162,8 +155,10 @@ onSnapshot(collection(db, "receitas"), (snap) => {
         <p>${r.moeda} ${r.val}</p>
         <small>€ ${v.toFixed(2)}</small>
 
-        <button onclick='edit("receitas","${i.id}",${JSON.stringify(r)})'>✏️</button>
-        <button onclick='del("receitas","${i.id}",${JSON.stringify(r)})'>🗑️</button>
+        <div class="actions">
+          <button onclick='edit("receitas","${i.id}",${JSON.stringify(r)})'>Editar</button>
+          <button onclick='del("receitas","${i.id}",${JSON.stringify(r)})'>Excluir</button>
+        </div>
       </div>
     `;
   });
@@ -173,7 +168,7 @@ onSnapshot(collection(db, "receitas"), (snap) => {
 });
 
 // =====================
-// DESPESAS STREAM
+// DESPESAS
 // =====================
 onSnapshot(collection(db, "despesas"), (snap) => {
   totalDespesas = 0;
@@ -191,8 +186,10 @@ onSnapshot(collection(db, "despesas"), (snap) => {
         <p>${d.moeda} ${d.val}</p>
         <small>€ ${v.toFixed(2)}</small>
 
-        <button onclick='edit("despesas","${i.id}",${JSON.stringify(d)})'>✏️</button>
-        <button onclick='del("despesas","${i.id}",${JSON.stringify(d)})'>🗑️</button>
+        <div class="actions">
+          <button onclick='edit("despesas","${i.id}",${JSON.stringify(d)})'>Editar</button>
+          <button onclick='del("despesas","${i.id}",${JSON.stringify(d)})'>Excluir</button>
+        </div>
       </div>
     `;
   });
@@ -202,7 +199,7 @@ onSnapshot(collection(db, "despesas"), (snap) => {
 });
 
 // =====================
-// DÍVIDAS STREAM
+// DÍVIDAS
 // =====================
 onSnapshot(collection(db, "dividas"), (snap) => {
   totalDividas = 0;
@@ -210,23 +207,44 @@ onSnapshot(collection(db, "dividas"), (snap) => {
 
   snap.forEach((i) => {
     const d = i.data();
+    const v = eur(d.valorOriginal, d.moeda);
 
-    const total = eur(d.valorOriginal, d.moeda);
-
-    totalDividas += total;
+    totalDividas += v;
 
     html += `
       <div class="card">
         <strong>${d.desc}</strong>
         <p>Total: ${d.moeda} ${d.valorOriginal}</p>
-        <p>Pago: ${d.pago}</p>
 
-        <button onclick='edit("dividas","${i.id}",${JSON.stringify(d)})'>✏️</button>
-        <button onclick='del("dividas","${i.id}",${JSON.stringify(d)})'>🗑️</button>
+        <div class="actions">
+          <button onclick='edit("dividas","${i.id}",${JSON.stringify(d)})'>Editar</button>
+          <button onclick='del("dividas","${i.id}",${JSON.stringify(d)})'>Excluir</button>
+        </div>
       </div>
     `;
   });
 
   document.getElementById("lista-dividas").innerHTML = html;
   atualizarResumo();
+});
+
+// =====================
+// HISTÓRICO
+// =====================
+onSnapshot(collection(db, "historico"), (snap) => {
+  let html = "";
+
+  snap.forEach((i) => {
+    const h = i.data();
+
+    html += `
+      <div class="card">
+        <strong>${h.tipo} - ${h.colecao}</strong>
+        <p>${JSON.stringify(h.antes || {})}</p>
+        <p>${JSON.stringify(h.depois || {})}</p>
+      </div>
+    `;
+  });
+
+  document.getElementById("lista-historico").innerHTML = html;
 });
