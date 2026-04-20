@@ -2,53 +2,73 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Meu Financeiro 2.0</title>
   <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
+
 <div class="container">
+
   <h1>💰 Meu Financeiro 2.0</h1>
+
+  <!-- CÂMBIO -->
   <div class="card">
     <h3>💱 Câmbio atual</h3>
     <p id="cambio">Carregando...</p>
   </div>
-<div class="card">
-  <h3>📊 Resumo</h3>
-  <p id="total-receitas">Receitas: €0</p>
-  <p id="total-despesas">Despesas: €0</p>
-  <p id="saldo">Saldo: €0</p>
-</div>
+
+  <!-- RESUMO -->
+  <div class="card">
+    <h3>📊 Resumo financeiro</h3>
+    <p id="total-receitas">Receitas: €0</p>
+    <p id="total-despesas">Despesas: €0</p>
+    <p id="saldo">Saldo: €0</p>
+  </div>
+
+  <!-- RECEITAS -->
   <div class="card">
     <h3>➕ Nova Receita</h3>
-    <input id="r-desc" placeholder="Descrição">
-    <input id="r-val" type="number" placeholder="Valor em €">
-    <button onclick="addReceita()">Salvar</button>
+    <input id="receita-desc" placeholder="Descrição">
+    <input id="receita-valor" type="number" placeholder="Valor em €">
+    <button onclick="addReceita()">Salvar Receita</button>
   </div>
-<div class="card">
-  <h3>➖ Nova Despesa</h3>
-  <input id="d-desc" placeholder="Descrição">
-  <input id="d-val" type="number" placeholder="Valor em €">
-  <button onclick="addDespesa()">Salvar</button>
-</div>
-<div class="card">
-  <h3>📉 Despesas</h3>
-  <div id="lista-despesas"></div>
-</div>
-<div class="card">
-  <h3>💳 Nova Dívida</h3>
-  <input id="div-desc" placeholder="Ex: Cartão Nubank">
-  <input id="div-valor" type="number" placeholder="Valor em R$">
-  <button onclick="addDivida()">Salvar</button>
-</div>
-<div class="card">
-  <h3>📋 Suas Dívidas</h3>
-  <div id="lista-dividas"></div>
-</div>
+
   <div class="card">
-    <h3>📊 Suas Receitas</h3>
+    <h3>📊 Lista de Receitas</h3>
     <div id="lista-receitas"></div>
   </div>
+
+  <!-- DESPESAS -->
+  <div class="card">
+    <h3>➖ Nova Despesa</h3>
+    <input id="despesa-desc" placeholder="Descrição">
+    <input id="despesa-valor" type="number" placeholder="Valor em €">
+    <button onclick="addDespesa()">Salvar Despesa</button>
+  </div>
+
+  <div class="card">
+    <h3>📉 Lista de Despesas</h3>
+    <div id="lista-despesas"></div>
+  </div>
+
+  <!-- DÍVIDAS -->
+  <div class="card">
+    <h3>💳 Nova Dívida</h3>
+    <input id="divida-desc" placeholder="Ex: Cartão Nubank">
+    <input id="divida-valor" type="number" placeholder="Valor em €">
+    <button onclick="addDivida()">Salvar Dívida</button>
+  </div>
+
+  <div class="card">
+    <h3>📋 Suas Dívidas</h3>
+    <div id="lista-dividas"></div>
+  </div>
+
 </div>
+
 <script type="module" src="app.js"></script>
+
 </body>
 </html>
