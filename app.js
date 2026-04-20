@@ -1,5 +1,4 @@
 import { db, collection, addDoc, onSnapshot, doc, updateDoc } from "./firebase.js";
-
 let taxa = 0;
 let totalReceitas = 0;
 let totalDespesas = 0;
