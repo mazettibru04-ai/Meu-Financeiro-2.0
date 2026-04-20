@@ -38,9 +38,11 @@ window.addReceita = async function () {
 // 📊 LISTAR RECEITAS
 onSnapshot(collection(db, "receitas"), (snapshot) => {
   let html = "";
+  totalReceitas = 0;
 
   snapshot.forEach((doc) => {
     const r = doc.data();
+    totalReceitas += r.val;
 
     html += `
       <div class="card">
@@ -50,6 +52,10 @@ onSnapshot(collection(db, "receitas"), (snapshot) => {
       </div>
     `;
   });
+
+  document.getElementById("lista-receitas").innerHTML = html;
+  atualizarResumo();
+});
 
   document.getElementById("lista-receitas").innerHTML = html;
 });
@@ -73,9 +79,11 @@ window.addDespesa = async function () {
 };
 onSnapshot(collection(db, "despesas"), (snapshot) => {
   let html = "";
+  totalDespesas = 0;
 
   snapshot.forEach((doc) => {
     const d = doc.data();
+    totalDespesas += d.val;
 
     html += `
       <div class="card">
@@ -87,6 +95,7 @@ onSnapshot(collection(db, "despesas"), (snapshot) => {
   });
 
   document.getElementById("lista-despesas").innerHTML = html;
+  atualizarResumo();
 });
 let totalReceitas = 0;
 let totalDespesas = 0;
