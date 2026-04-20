@@ -71,3 +71,20 @@ window.addDespesa = async function () {
   document.getElementById("d-desc").value = "";
   document.getElementById("d-val").value = "";
 };
+onSnapshot(collection(db, "despesas"), (snapshot) => {
+  let html = "";
+
+  snapshot.forEach((doc) => {
+    const d = doc.data();
+
+    html += `
+      <div class="card">
+        <strong>${d.desc}</strong>
+        <p>€ ${d.val}</p>
+        <small>R$ ${(d.val * taxa).toFixed(2)}</small>
+      </div>
+    `;
+  });
+
+  document.getElementById("lista-despesas").innerHTML = html;
+});
