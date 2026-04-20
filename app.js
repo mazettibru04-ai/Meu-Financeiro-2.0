@@ -33,6 +33,15 @@ async function pegarCambio() {
 pegarCambio();
 
 // =====================
+// 💱 CONVERSÃO BASE (EUR)
+// =====================
+function converterParaEUR(valor, moeda) {
+  if (moeda === "EUR") return valor;
+  if (moeda === "BRL") return valor / taxa;
+  return valor;
+}
+
+// =====================
 // 📊 RESUMO GLOBAL
 // =====================
 function atualizarResumo() {
@@ -54,12 +63,14 @@ function atualizarResumo() {
 window.addReceita = async function () {
   const desc = document.getElementById("r-desc").value.trim();
   const val = Number(document.getElementById("r-val").value);
+  const moeda = document.getElementById("r-moeda").value;
 
   if (!desc || val <= 0) return alert("Preencha corretamente");
 
   await addDoc(collection(db, "receitas"), {
     desc,
     val,
+    moeda,
     criadoEm: Date.now()
   });
 
@@ -73,12 +84,14 @@ window.addReceita = async function () {
 window.addDespesa = async function () {
   const desc = document.getElementById("d-desc").value.trim();
   const val = Number(document.getElementById("d-val").value);
+  const moeda = document.getElementById("d-moeda").value;
 
   if (!desc || val <= 0) return alert("Preencha corretamente");
 
   await addDoc(collection(db, "despesas"), {
     desc,
     val,
+    moeda,
     criadoEm: Date.now()
   });
 
@@ -98,14 +111,18 @@ onSnapshot(collection(db, "receitas"), (snapshot) => {
   snapshot.forEach((item) => {
     const r = item.data();
     const val = Number(r.val || 0);
+    const moeda = r.moeda || "EUR";
 
-    totalReceitas += val;
+    const convertido = converterParaEUR(val, moeda);
+
+    totalReceitas += convertido;
 
     html += `
       <div class="card">
         <strong>${r.desc || "Sem descrição"}</strong>
-        <p>€ ${val.toFixed(2)}</p>
-        <small>R$ ${(val * taxa).toFixed(2)}</small>
+        <p>${moeda} ${val.toFixed(2)}</p>
+        <small>≈ € ${convertido.toFixed(2)}</small>
+        <small>≈ R$ ${(convertido * taxa).toFixed(2)}</small>
       </div>
     `;
   });
@@ -126,14 +143,18 @@ onSnapshot(collection(db, "despesas"), (snapshot) => {
   snapshot.forEach((item) => {
     const d = item.data();
     const val = Number(d.val || 0);
+    const moeda = d.moeda || "EUR";
 
-    totalDespesas += val;
+    const convertido = converterParaEUR(val, moeda);
+
+    totalDespesas += convertido;
 
     html += `
       <div class="card">
         <strong>${d.desc || "Sem descrição"}</strong>
-        <p>€ ${val.toFixed(2)}</p>
-        <small>R$ ${(val * taxa).toFixed(2)}</small>
+        <p>${moeda} ${val.toFixed(2)}</p>
+        <small>≈ € ${convertido.toFixed(2)}</small>
+        <small>≈ R$ ${(convertido * taxa).toFixed(2)}</small>
       </div>
     `;
   });
@@ -148,12 +169,14 @@ onSnapshot(collection(db, "despesas"), (snapshot) => {
 window.addDivida = async function () {
   const desc = document.getElementById("div-desc").value.trim();
   const valor = Number(document.getElementById("div-valor").value);
+  const moeda = document.getElementById("div-moeda").value;
 
   if (!desc || valor <= 0) return alert("Preencha corretamente");
 
   await addDoc(collection(db, "dividas"), {
     desc,
     valorOriginal: valor,
+    moeda,
     pago: 0,
     criadoEm: Date.now()
   });
@@ -172,20 +195,26 @@ onSnapshot(collection(db, "dividas"), (snapshot) => {
   snapshot.forEach((item) => {
     const d = item.data();
 
-    const pago = Number(d.pago || 0);
-    const total = Number(d.valorOriginal || 0);
+    const moeda = d.moeda || "EUR";
+
+    const total = converterParaEUR(Number(d.valorOriginal || 0), moeda);
+    const pago = converterParaEUR(Number(d.pago || 0), moeda);
+
     const restante = total - pago;
     const progresso = total ? (pago / total) * 100 : 0;
 
     html += `
       <div class="card">
         <strong>${d.desc}</strong>
-        <p>Total: € ${total.toFixed(2)}</p>
-        <p>Pago: € ${pago.toFixed(2)}</p>
-        <p>Falta: € ${restante.toFixed(2)}</p>
+
+        <p>Total: ${moeda} ${Number(d.valorOriginal).toFixed(2)}</p>
+        <p>Pago: ${moeda} ${Number(d.pago || 0).toFixed(2)}</p>
+
+        <p>≈ Falta: € ${restante.toFixed(2)}</p>
+        <p>≈ R$ ${(restante * taxa).toFixed(2)}</p>
 
         <input id="pagar-${item.id}" type="number" placeholder="Valor pago">
-        <button onclick="pagarDivida('${item.id}', ${pago})">
+        <button onclick="pagarDivida('${item.id}', ${d.pago || 0})">
           Pagar
         </button>
 
@@ -198,7 +227,7 @@ onSnapshot(collection(db, "dividas"), (snapshot) => {
 });
 
 // =====================
-// 💸 PAGAMENTO DÍVIDA
+// 💸 PAGAR DÍVIDA
 // =====================
 window.pagarDivida = async function (id, atual) {
   const input = document.getElementById(`pagar-${id}`);
