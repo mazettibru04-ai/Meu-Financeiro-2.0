@@ -131,3 +131,82 @@ onSnapshot(collection(db, "despesas"), (snapshot) => {
   document.getElementById("lista-despesas").innerHTML = html;
   atualizarResumo();
 });
+
+// 💳 ADICIONAR DÍVIDA
+window.addDivida = async function () {
+  try {
+    const desc = document.getElementById("div-desc").value;
+    const valor = parseFloat(document.getElementById("div-valor").value);
+
+    if (!desc || !valor) {
+      alert("Preencha tudo");
+      return;
+    }
+
+    await addDoc(collection(db, "dividas"), {
+      desc,
+      valorOriginal: valor,
+      pago: 0,
+      criadoEm: Date.now()
+    });
+
+    document.getElementById("div-desc").value = "";
+    document.getElementById("div-valor").value = "";
+
+  } catch (e) {
+    console.error(e);
+    alert("Erro ao salvar dívida");
+  }
+};
+
+// 📋 LISTAR DÍVIDAS
+onSnapshot(collection(db, "dividas"), (snapshot) => {
+  let html = "";
+
+  snapshot.forEach((doc) => {
+    const d = doc.data();
+
+    const restante = d.valorOriginal - d.pago;
+    const progresso = (d.pago / d.valorOriginal) * 100;
+
+    html += `
+      <div class="card">
+        <strong>${d.desc}</strong>
+        <p>Total: R$ ${d.valorOriginal}</p>
+        <p>Pago: R$ ${d.pago}</p>
+        <p>Falta: R$ ${restante}</p>
+        <p>€ ${(restante / taxa).toFixed(2)}</p>
+        <p>Progresso: ${progresso.toFixed(1)}%</p>
+
+        <input id="pagar-${doc.id}" type="number" placeholder="Valor pago">
+        <button onclick="pagarDivida('${doc.id}', ${d.pago})">Pagar</button>
+      </div>
+    `;
+  });
+
+  document.getElementById("lista-dividas").innerHTML = html;
+});
+
+// 💸 PAGAR DÍVIDA
+import { doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+window.pagarDivida = async function (id, pagoAtual) {
+  try {
+    const valor = parseFloat(document.getElementById(`pagar-${id}`).value);
+
+    if (!valor) {
+      alert("Digite um valor");
+      return;
+    }
+
+    const ref = doc(db, "dividas", id);
+
+    await updateDoc(ref, {
+      pago: pagoAtual + valor
+    });
+
+  } catch (e) {
+    console.error(e);
+    alert("Erro ao pagar");
+  }
+};
