@@ -1,4 +1,4 @@
-import { db, collection, addDoc, onSnapshot } from "./firebase.js";
+import { db, collection, addDoc, onSnapshot, doc, updateDoc } from "./firebase.js";
 
 let taxa = 0;
 let totalReceitas = 0;
