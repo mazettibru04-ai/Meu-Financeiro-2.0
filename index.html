@@ -27,11 +27,21 @@
     <p id="saldo">Saldo: €0</p>
   </div>
 
+  <!-- ===================== -->
   <!-- RECEITAS -->
+  <!-- ===================== -->
   <div class="card">
     <h3>➕ Nova Receita</h3>
+
     <input id="r-desc" placeholder="Descrição">
-    <input id="r-val" type="number" placeholder="Valor em €">
+    <input id="r-val" type="number" placeholder="Valor">
+
+    <!-- MOEDA -->
+    <select id="r-moeda">
+      <option value="EUR">Euro (€)</option>
+      <option value="BRL">Real (R$)</option>
+    </select>
+
     <button onclick="addReceita()">Salvar Receita</button>
   </div>
 
@@ -40,11 +50,21 @@
     <div id="lista-receitas"></div>
   </div>
 
+  <!-- ===================== -->
   <!-- DESPESAS -->
+  <!-- ===================== -->
   <div class="card">
     <h3>➖ Nova Despesa</h3>
+
     <input id="d-desc" placeholder="Descrição">
-    <input id="d-val" type="number" placeholder="Valor em €">
+    <input id="d-val" type="number" placeholder="Valor">
+
+    <!-- MOEDA -->
+    <select id="d-moeda">
+      <option value="EUR">Euro (€)</option>
+      <option value="BRL">Real (R$)</option>
+    </select>
+
     <button onclick="addDespesa()">Salvar Despesa</button>
   </div>
 
@@ -53,11 +73,21 @@
     <div id="lista-despesas"></div>
   </div>
 
+  <!-- ===================== -->
   <!-- DÍVIDAS -->
+  <!-- ===================== -->
   <div class="card">
     <h3>💳 Nova Dívida</h3>
+
     <input id="div-desc" placeholder="Ex: Cartão Nubank">
-    <input id="div-valor" type="number" placeholder="Valor em €">
+    <input id="div-valor" type="number" placeholder="Valor">
+
+    <!-- MOEDA -->
+    <select id="div-moeda">
+      <option value="EUR">Euro (€)</option>
+      <option value="BRL">Real (R$)</option>
+    </select>
+
     <button onclick="addDivida()">Salvar Dívida</button>
   </div>
 
