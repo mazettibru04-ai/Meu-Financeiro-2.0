@@ -9,7 +9,7 @@ const firebaseConfig = {
   projectId: "meu-fincaneiro",
   storageBucket: "meu-fincaneiro.firebasestorage.app",
   messagingSenderId: "836819309794",
-  appId: "1:836819309794:web:7e0526e138dea6d2cebabb""
+  appId: "1:836819309794:web:7e0526e138dea6d2cebabb"
 };
 
 const app = initializeApp(firebaseConfig);
