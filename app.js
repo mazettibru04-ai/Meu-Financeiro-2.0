@@ -14,6 +14,8 @@ let totalReceitas = 0;
 let totalDespesas = 0;
 let totalDividas = 0;
 
+let grafico;
+
 // =====================
 // HISTÓRICO
 // =====================
@@ -51,6 +53,39 @@ function eur(v, m) {
 }
 
 // =====================
+// GRÁFICO
+// =====================
+function atualizarGrafico() {
+  const ctx = document.getElementById("graficoFinanceiro");
+
+  if (!ctx) return;
+
+  if (grafico) grafico.destroy();
+
+  grafico = new Chart(ctx, {
+    type: "bar",
+    data: {
+      labels: ["Receitas", "Despesas"],
+      datasets: [{
+        label: "€",
+        data: [totalReceitas, totalDespesas],
+        backgroundColor: ["#22c55e", "#ef4444"],
+        borderRadius: 8
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { display: false }
+      },
+      scales: {
+        y: { beginAtZero: true }
+      }
+    }
+  });
+}
+
+// =====================
 // RESUMO
 // =====================
 function atualizarResumo() {
@@ -71,6 +106,8 @@ function atualizarResumo() {
 
   document.getElementById("saldo-real").innerText =
     `Saldo real (com dívidas): € ${saldoReal.toFixed(2)}`;
+
+  atualizarGrafico();
 }
 
 // =====================
@@ -83,7 +120,7 @@ window.addReceita = async function () {
 
   if (!desc || val <= 0) return alert("Preencha corretamente");
 
-  const ref = await addDoc(collection(db, "receitas"), {
+  await addDoc(collection(db, "receitas"), {
     desc, val, moeda, criadoEm: Date.now()
   });
 
@@ -137,7 +174,7 @@ window.edit = async function (col, id, data) {
 };
 
 // =====================
-// RECEITAS
+// STREAM RECEITAS
 // =====================
 onSnapshot(collection(db, "receitas"), (snap) => {
   totalReceitas = 0;
@@ -168,7 +205,7 @@ onSnapshot(collection(db, "receitas"), (snap) => {
 });
 
 // =====================
-// DESPESAS
+// STREAM DESPESAS
 // =====================
 onSnapshot(collection(db, "despesas"), (snap) => {
   totalDespesas = 0;
@@ -199,7 +236,7 @@ onSnapshot(collection(db, "despesas"), (snap) => {
 });
 
 // =====================
-// DÍVIDAS
+// STREAM DÍVIDAS
 // =====================
 onSnapshot(collection(db, "dividas"), (snap) => {
   totalDividas = 0;
@@ -229,22 +266,3 @@ onSnapshot(collection(db, "dividas"), (snap) => {
 });
 
 // =====================
-// HISTÓRICO
-// =====================
-onSnapshot(collection(db, "historico"), (snap) => {
-  let html = "";
-
-  snap.forEach((i) => {
-    const h = i.data();
-
-    html += `
-      <div class="card">
-        <strong>${h.tipo} - ${h.colecao}</strong>
-        <p>${JSON.stringify(h.antes || {})}</p>
-        <p>${JSON.stringify(h.depois || {})}</p>
-      </div>
-    `;
-  });
-
-  document.getElementById("lista-historico").innerHTML = html;
-});
