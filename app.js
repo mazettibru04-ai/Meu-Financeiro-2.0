@@ -53,3 +53,21 @@ onSnapshot(collection(db, "receitas"), (snapshot) => {
 
   document.getElementById("lista-receitas").innerHTML = html;
 });
+window.addDespesa = async function () {
+  const desc = document.getElementById("d-desc").value;
+  const val = parseFloat(document.getElementById("d-val").value);
+
+  if (!desc || !val) {
+    alert("Preencha tudo");
+    return;
+  }
+
+  await addDoc(collection(db, "despesas"), {
+    desc,
+    val,
+    criadoEm: Date.now()
+  });
+
+  document.getElementById("d-desc").value = "";
+  document.getElementById("d-val").value = "";
+};
