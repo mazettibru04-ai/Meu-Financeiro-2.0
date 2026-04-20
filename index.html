@@ -6,10 +6,8 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-
 <div class="container">
   <h1>💰 Meu Financeiro 2.0</h1>
-
   <div class="card">
     <h3>💱 Câmbio atual</h3>
     <p id="cambio">Carregando...</p>
@@ -32,30 +30,25 @@
   <input id="d-val" type="number" placeholder="Valor em €">
   <button onclick="addDespesa()">Salvar</button>
 </div>
-
 <div class="card">
   <h3>📉 Despesas</h3>
   <div id="lista-despesas"></div>
 </div>
-
 <div class="card">
   <h3>💳 Nova Dívida</h3>
   <input id="div-desc" placeholder="Ex: Cartão Nubank">
   <input id="div-valor" type="number" placeholder="Valor em R$">
   <button onclick="addDivida()">Salvar</button>
 </div>
-
 <div class="card">
   <h3>📋 Suas Dívidas</h3>
   <div id="lista-dividas"></div>
 </div>
-  
   <div class="card">
     <h3>📊 Suas Receitas</h3>
     <div id="lista-receitas"></div>
   </div>
 </div>
-
 <script type="module" src="app.js"></script>
 </body>
 </html>
