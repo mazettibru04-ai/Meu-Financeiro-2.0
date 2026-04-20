@@ -45,49 +45,64 @@ function atualizarResumo() {
 }
 
 // ➕ RECEITA
-window.addReceita = async function () {
+window.addReceita = async function (event) {
   const btn = event.target;
 
-  const desc = document.getElementById("r-desc").value.trim();
-  const val = Number(document.getElementById("r-val").value);
+  try {
+    const desc = document.getElementById("r-desc").value.trim();
+    const val = Number(document.getElementById("r-val").value);
 
-  if (!desc || isNaN(val) || val <= 0) return alert("Preencha corretamente");
+    if (!desc || isNaN(val) || val <= 0) {
+      alert("Preencha corretamente");
+      return;
+    }
 
-  btn.disabled = true;
+    btn.disabled = true;
 
-  await addDoc(collection(db, "receitas"), {
-    desc,
-    val,
-    criadoEm: Date.now()
-  });
+    await addDoc(collection(db, "receitas"), {
+      desc,
+      val,
+      criadoEm: Date.now()
+    });
 
-  document.getElementById("r-desc").value = "";
-  document.getElementById("r-val").value = "";
+    document.getElementById("r-desc").value = "";
+    document.getElementById("r-val").value = "";
 
-  btn.disabled = false;
+  } catch (e) {
+    console.error(e);
+    alert("Erro ao salvar receita");
+  } finally {
+    btn.disabled = false;
+  }
 };
 
 // ➖ DESPESA
-window.addDespesa = async function () {
+window.addDespesa = async function (event) {
   const btn = event.target;
 
-  const desc = document.getElementById("d-desc").value.trim();
-  const val = Number(document.getElementById("d-val").value);
+  try {
+    const desc = document.getElementById("d-desc").value.trim();
+    const val = Number(document.getElementById("d-val").value);
 
-  if (!desc || isNaN(val) || val <= 0) return alert("Preencha corretamente");
+    if (!desc || isNaN(val) || val <= 0) {
+      alert("Preencha corretamente");
+      return;
+    }
 
-  btn.disabled = true;
+    btn.disabled = true;
 
-  await addDoc(collection(db, "despesas"), {
-    desc,
-    val,
-    criadoEm: Date.now()
-  });
+    await addDoc(collection(db, "despesas"), {
+      desc,
+      val,
+      criadoEm: Date.now()
+    });
 
-  document.getElementById("d-desc").value = "";
-  document.getElementById("d-val").value = "";
+    document.getElementById("d-desc").value = "";
+    document.getElementById("d-val").value = "";
 
-  btn.disabled = false;
+  } finally {
+    btn.disabled = false;
+  }
 };
 
 // 📊 RECEITAS
@@ -143,7 +158,10 @@ window.addDivida = async function () {
   const desc = document.getElementById("div-desc").value.trim();
   const valor = Number(document.getElementById("div-valor").value);
 
-  if (!desc || isNaN(valor) || valor <= 0) return alert("Preencha corretamente");
+  if (!desc || isNaN(valor) || valor <= 0) {
+    alert("Preencha corretamente");
+    return;
+  }
 
   await addDoc(collection(db, "dividas"), {
     desc,
@@ -193,7 +211,10 @@ window.pagarDivida = async function (id, pagoAtual) {
   const input = document.getElementById(`pagar-${id}`);
   const valor = Number(input.value);
 
-  if (isNaN(valor) || valor <= 0) return alert("Digite um valor válido");
+  if (isNaN(valor) || valor <= 0) {
+    alert("Digite um valor válido");
+    return;
+  }
 
   const ref = doc(db, "dividas", id);
 
