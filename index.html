@@ -11,7 +11,7 @@
 
 <div class="container">
 
-  <h1>💰 Meu Financeiro 2.0</h1>
+  <h1>💎 Meu Financeiro 2.0</h1>
 
   <!-- CÂMBIO -->
   <div class="card">
@@ -33,9 +33,9 @@
     <p id="saldo-real">Saldo real: €0</p>
   </div>
 
-  <!-- DASHBOARD -->
+  <!-- GRÁFICOS -->
   <div class="card">
-    <h3>📊 Dashboard Financeiro</h3>
+    <h3>📊 Dashboard</h3>
     <canvas id="graficoFinanceiro"></canvas>
   </div>
 
@@ -52,7 +52,6 @@
   <!-- RECEITAS -->
   <div class="card">
     <h3>➕ Receita</h3>
-
     <input id="r-desc" placeholder="Descrição">
     <select id="r-cat">
       <option>Trabalho</option>
@@ -65,7 +64,6 @@
       <option value="EUR">EUR</option>
       <option value="BRL">BRL</option>
     </select>
-
     <button onclick="addReceita()">Adicionar</button>
   </div>
 
@@ -77,7 +75,6 @@
   <!-- DESPESAS -->
   <div class="card">
     <h3>➖ Despesa</h3>
-
     <input id="d-desc" placeholder="Descrição">
     <select id="d-cat">
       <option>Alimentação</option>
@@ -92,7 +89,6 @@
       <option value="EUR">EUR</option>
       <option value="BRL">BRL</option>
     </select>
-
     <button onclick="addDespesa()">Adicionar</button>
   </div>
 
@@ -104,14 +100,12 @@
   <!-- DÍVIDAS -->
   <div class="card">
     <h3>💳 Dívidas</h3>
-
     <input id="div-desc" placeholder="Descrição">
     <input id="div-valor" type="number" placeholder="Valor">
     <select id="div-moeda">
       <option value="EUR">EUR</option>
       <option value="BRL">BRL</option>
     </select>
-
     <button onclick="addDivida()">Adicionar</button>
   </div>
 
