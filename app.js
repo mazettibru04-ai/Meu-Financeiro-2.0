@@ -7,10 +7,8 @@ let totalDespesas = 0;
 let totalDividas = 0;
 
 let chart;
-let chartReceitas;
-let chartDespesas;
 
-// 🎨 ANIMAÇÃO GLOBAL
+// 🎨 animação global
 Chart.defaults.animation = {
   duration: 1800,
   easing: "easeOutQuart"
@@ -31,23 +29,34 @@ function eur(v, m) {
 async function pegarCambio() {
   const res = await fetch("https://api.exchangerate-api.com/v4/latest/EUR");
   const data = await res.json();
-  taxa = data.rates.BRL;
-  document.getElementById("cambio").innerText = `€1 = R$ ${taxa.toFixed(2)}`;
+  taxa = data.rates.BRL || 0;
+
+  document.getElementById("cambio").innerText =
+    `€1 = R$ ${taxa.toFixed(2)}`;
 }
 pegarCambio();
 
 // =====================
-// RESUMO
+// RESUMO (CORRIGIDO 100%)
 // =====================
 function atualizarResumo() {
   const saldo = totalReceitas - totalDespesas;
   const saldoReal = saldo - totalDividas;
 
-  total-receitas.innerText = `Receitas: €${totalReceitas.toFixed(2)}`;
-  total-despesas.innerText = `Despesas: €${totalDespesas.toFixed(2)}`;
-  total-dividas.innerText = `Dívidas: €${totalDividas.toFixed(2)}`;
-  saldo.innerText = `Saldo: €${saldo.toFixed(2)}`;
-  saldo-real.innerText = `Saldo real: €${saldoReal.toFixed(2)}`;
+  document.getElementById("total-receitas").innerText =
+    `Receitas: €${totalReceitas.toFixed(2)}`;
+
+  document.getElementById("total-despesas").innerText =
+    `Despesas: €${totalDespesas.toFixed(2)}`;
+
+  document.getElementById("total-dividas").innerText =
+    `Dívidas: €${totalDividas.toFixed(2)}`;
+
+  document.getElementById("saldo").innerText =
+    `Saldo: €${saldo.toFixed(2)}`;
+
+  document.getElementById("saldo-real").innerText =
+    `Saldo real: €${saldoReal.toFixed(2)}`;
 
   atualizarGrafico();
 }
@@ -74,45 +83,55 @@ function atualizarGrafico() {
       }]
     },
     options: {
-      plugins: { legend: { display: false } }
+      plugins: { legend: { display: false } },
+      animation: {
+        duration: 2000,
+        easing: "easeOutElastic"
+      }
     }
   });
 }
 
 // =====================
-// ADICIONAR
+// ADICIONAR RECEITA
 // =====================
 window.addReceita = async () => {
   await addDoc(collection(db, "receitas"), {
-    desc: r-desc.value,
-    categoria: r-cat.value,
-    val: Number(r-val.value),
-    moeda: r-moeda.value,
-    criadoEm: Date.now()
-  });
-};
-
-window.addDespesa = async () => {
-  await addDoc(collection(db, "despesas"), {
-    desc: d-desc.value,
-    categoria: d-cat.value,
-    val: Number(d-val.value),
-    moeda: d-moeda.value,
-    criadoEm: Date.now()
-  });
-};
-
-window.addDivida = async () => {
-  await addDoc(collection(db, "dividas"), {
-    desc: div-desc.value,
-    valorOriginal: Number(div-valor.value),
-    moeda: div-moeda.value,
+    desc: document.getElementById("r-desc").value,
+    categoria: document.getElementById("r-cat").value,
+    val: Number(document.getElementById("r-val").value),
+    moeda: document.getElementById("r-moeda").value,
     criadoEm: Date.now()
   });
 };
 
 // =====================
-// STREAMS
+// ADICIONAR DESPESA
+// =====================
+window.addDespesa = async () => {
+  await addDoc(collection(db, "despesas"), {
+    desc: document.getElementById("d-desc").value,
+    categoria: document.getElementById("d-cat").value,
+    val: Number(document.getElementById("d-val").value),
+    moeda: document.getElementById("d-moeda").value,
+    criadoEm: Date.now()
+  });
+};
+
+// =====================
+// ADICIONAR DÍVIDA
+// =====================
+window.addDivida = async () => {
+  await addDoc(collection(db, "dividas"), {
+    desc: document.getElementById("div-desc").value,
+    valorOriginal: Number(document.getElementById("div-valor").value),
+    moeda: document.getElementById("div-moeda").value,
+    criadoEm: Date.now()
+  });
+};
+
+// =====================
+// STREAM RECEITAS
 // =====================
 onSnapshot(collection(db, "receitas"), snap => {
   totalReceitas = 0;
@@ -121,15 +140,25 @@ onSnapshot(collection(db, "receitas"), snap => {
   snap.forEach(i => {
     const r = i.data();
     const v = eur(r.val, r.moeda);
+
     totalReceitas += v;
 
-    html += `<div class="card">${r.desc} - €${v.toFixed(2)}</div>`;
+    html += `
+      <div class="card">
+        <strong>${r.desc}</strong>
+        <p>${r.categoria}</p>
+        <small>€ ${v.toFixed(2)}</small>
+      </div>
+    `;
   });
 
-  lista-receitas.innerHTML = html;
+  document.getElementById("lista-receitas").innerHTML = html;
   atualizarResumo();
 });
 
+// =====================
+// STREAM DESPESAS
+// =====================
 onSnapshot(collection(db, "despesas"), snap => {
   totalDespesas = 0;
   let html = "";
@@ -137,15 +166,25 @@ onSnapshot(collection(db, "despesas"), snap => {
   snap.forEach(i => {
     const d = i.data();
     const v = eur(d.val, d.moeda);
+
     totalDespesas += v;
 
-    html += `<div class="card">${d.desc} - €${v.toFixed(2)}</div>`;
+    html += `
+      <div class="card">
+        <strong>${d.desc}</strong>
+        <p>${d.categoria}</p>
+        <small>€ ${v.toFixed(2)}</small>
+      </div>
+    `;
   });
 
-  lista-despesas.innerHTML = html;
+  document.getElementById("lista-despesas").innerHTML = html;
   atualizarResumo();
 });
 
+// =====================
+// STREAM DÍVIDAS
+// =====================
 onSnapshot(collection(db, "dividas"), snap => {
   totalDividas = 0;
   let html = "";
@@ -154,9 +193,14 @@ onSnapshot(collection(db, "dividas"), snap => {
     const d = i.data();
     totalDividas += eur(d.valorOriginal, d.moeda);
 
-    html += `<div class="card">${d.desc}</div>`;
+    html += `
+      <div class="card">
+        <strong>${d.desc}</strong>
+        <small>€ ${eur(d.valorOriginal, d.moeda).toFixed(2)}</small>
+      </div>
+    `;
   });
 
-  lista-dividas.innerHTML = html;
+  document.getElementById("lista-dividas").innerHTML = html;
   atualizarResumo();
 });
