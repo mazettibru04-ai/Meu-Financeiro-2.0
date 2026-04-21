@@ -9,6 +9,53 @@
 
 <body>
 
+<!-- MODAL DE PAGAMENTO -->
+<div class="modal-overlay" id="modal-pagamento">
+  <div class="modal">
+    <p class="modal-title" id="modal-nome">Dívida</p>
+    <p class="modal-subtitle" id="modal-moeda-info">Moeda original</p>
+
+    <!-- ANEL DE PROGRESSO -->
+    <div class="ring-wrap">
+      <svg width="150" height="150" viewBox="0 0 150 150">
+        <circle class="ring-bg" cx="75" cy="75" r="60"/>
+        <circle class="ring-fill" id="ring-fill" cx="75" cy="75" r="60"
+          stroke-dasharray="377"
+          stroke-dashoffset="377"
+          stroke="#22c55e"/>
+      </svg>
+      <div class="ring-text">
+        <span class="ring-pct" id="ring-pct">0%</span>
+        <span class="ring-label">pago</span>
+      </div>
+    </div>
+
+    <!-- INFO -->
+    <div class="modal-info">
+      <div class="modal-info-item">
+        <div class="info-label">Total</div>
+        <div class="info-value red" id="modal-total">€0</div>
+      </div>
+      <div class="modal-info-item">
+        <div class="info-label">Pago</div>
+        <div class="info-value green" id="modal-pago">€0</div>
+      </div>
+      <div class="modal-info-item">
+        <div class="info-label">Resta</div>
+        <div class="info-value blue" id="modal-resta">€0</div>
+      </div>
+    </div>
+
+    <!-- INPUT PAGAMENTO -->
+    <div class="modal-input-group">
+      <input type="number" id="modal-valor-pagar" placeholder="Valor a pagar" min="0" step="0.01">
+      <button onclick="confirmarPagamento()">💸 Pagar</button>
+    </div>
+
+    <button class="btn-fechar" onclick="fecharModal()">✕ Fechar</button>
+  </div>
+</div>
+
 <div class="container">
 
   <h1>💰 Meu Financeiro 2.0</h1>
@@ -22,13 +69,10 @@
   <!-- RESUMO -->
   <div class="card">
     <h3>📊 Resumo financeiro</h3>
-
     <p id="total-receitas">Receitas: €0</p>
     <p id="total-despesas">Despesas: €0</p>
     <p id="total-dividas">Dívidas: €0</p>
-
     <hr>
-
     <p id="saldo">Saldo: €0</p>
     <p id="saldo-real">Saldo real (com dívidas): €0</p>
   </div>
@@ -38,33 +82,28 @@
     <h3>📈 Ganhos vs Gastos</h3>
     <canvas id="graficoFinanceiro"></canvas>
 
-    <h3 style="margin-top: 20px;">📊 Receitas por categoria</h3>
+    <h3 style="margin-top:20px">📊 Receitas por categoria</h3>
     <canvas id="graficoReceitas"></canvas>
 
-    <h3 style="margin-top: 20px;">📊 Despesas por categoria</h3>
+    <h3 style="margin-top:20px">📊 Despesas por categoria</h3>
     <canvas id="graficoDespesas"></canvas>
   </div>
 
   <!-- RECEITAS -->
   <div class="card">
     <h3>➕ Nova Receita</h3>
-
     <input id="r-desc" placeholder="Descrição">
-
     <select id="r-cat">
       <option value="Trabalho">Trabalho</option>
       <option value="Freelance">Freelance</option>
       <option value="Investimentos">Investimentos</option>
       <option value="Outros">Outros</option>
     </select>
-
     <input id="r-val" type="number" placeholder="Valor" min="0">
-
     <select id="r-moeda">
       <option value="EUR">Euro (€)</option>
       <option value="BRL">Real (R$)</option>
     </select>
-
     <button onclick="addReceita()">Salvar Receita</button>
   </div>
 
@@ -76,9 +115,7 @@
   <!-- DESPESAS -->
   <div class="card">
     <h3>➖ Nova Despesa</h3>
-
     <input id="d-desc" placeholder="Descrição">
-
     <select id="d-cat">
       <option value="Alimentação">Alimentação</option>
       <option value="Transporte">Transporte</option>
@@ -87,14 +124,11 @@
       <option value="Saúde">Saúde</option>
       <option value="Outros">Outros</option>
     </select>
-
     <input id="d-val" type="number" placeholder="Valor" min="0">
-
     <select id="d-moeda">
       <option value="EUR">Euro (€)</option>
       <option value="BRL">Real (R$)</option>
     </select>
-
     <button onclick="addDespesa()">Salvar Despesa</button>
   </div>
 
@@ -106,15 +140,12 @@
   <!-- DÍVIDAS -->
   <div class="card">
     <h3>💳 Nova Dívida</h3>
-
     <input id="div-desc" placeholder="Ex: Cartão Nubank">
-    <input id="div-valor" type="number" placeholder="Valor" min="0">
-
+    <input id="div-valor" type="number" placeholder="Valor total" min="0">
     <select id="div-moeda">
       <option value="EUR">Euro (€)</option>
       <option value="BRL">Real (R$)</option>
     </select>
-
     <button onclick="addDivida()">Salvar Dívida</button>
   </div>
 
