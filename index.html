@@ -33,14 +33,16 @@
     <p id="saldo-real">Saldo real (com dívidas): €0</p>
   </div>
 
-  <!-- 📊 GRÁFICO -->
+  <!-- GRÁFICOS -->
   <div class="card">
     <h3>📈 Ganhos vs Gastos</h3>
-    <h3>📊 Receitas por categoria</h3>
-<canvas id="graficoReceitas"></canvas>
+    <canvas id="graficoFinanceiro"></canvas>
 
-<h3>📊 Despesas por categoria</h3>
-<canvas id="graficoDespesas"></canvas>
+    <h3 style="margin-top: 20px;">📊 Receitas por categoria</h3>
+    <canvas id="graficoReceitas"></canvas>
+
+    <h3 style="margin-top: 20px;">📊 Despesas por categoria</h3>
+    <canvas id="graficoDespesas"></canvas>
   </div>
 
   <!-- RECEITAS -->
@@ -56,7 +58,7 @@
       <option value="Outros">Outros</option>
     </select>
 
-    <input id="r-val" type="number" placeholder="Valor">
+    <input id="r-val" type="number" placeholder="Valor" min="0">
 
     <select id="r-moeda">
       <option value="EUR">Euro (€)</option>
@@ -86,7 +88,7 @@
       <option value="Outros">Outros</option>
     </select>
 
-    <input id="d-val" type="number" placeholder="Valor">
+    <input id="d-val" type="number" placeholder="Valor" min="0">
 
     <select id="d-moeda">
       <option value="EUR">Euro (€)</option>
@@ -106,7 +108,7 @@
     <h3>💳 Nova Dívida</h3>
 
     <input id="div-desc" placeholder="Ex: Cartão Nubank">
-    <input id="div-valor" type="number" placeholder="Valor">
+    <input id="div-valor" type="number" placeholder="Valor" min="0">
 
     <select id="div-moeda">
       <option value="EUR">Euro (€)</option>
@@ -124,7 +126,7 @@
   <!-- HISTÓRICO -->
   <div class="card">
     <h3>📜 Histórico de alterações</h3>
-    <div id="lista-historico"></div>
+    <div id="lista-historico"><p style="color:#94a3b8">Nenhuma alteração ainda</p></div>
   </div>
 
 </div>
