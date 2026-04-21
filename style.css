@@ -1,132 +1,103 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Meu Financeiro 2.0</title>
-  <link rel="stylesheet" href="style.css">
-</head>
+body {
+  font-family: Arial;
+  background: #0f172a;
+  color: white;
+}
 
-<body>
+/* CONTAINER */
+.container {
+  max-width: 650px;
+  margin: auto;
+  padding: 20px;
+}
 
-<div class="container">
+/* CARD PRINCIPAL */
+.card {
+  background: #1e293b;
+  padding: 15px;
+  border-radius: 12px;
+  margin-bottom: 12px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+  transition: 0.2s;
+}
 
-  <h1>💰 Meu Financeiro 2.0</h1>
+.card:hover {
+  transform: translateY(-2px);
+}
 
-  <!-- CÂMBIO -->
-  <div class="card highlight">
-    <h3>💱 Câmbio atual</h3>
-    <p id="cambio">Carregando...</p>
-  </div>
+/* DESTAQUE (CÂMBIO) */
+.highlight {
+  border: 1px solid #38bdf8;
+}
 
-  <!-- RESUMO -->
-  <div class="card">
-    <h3>📊 Resumo financeiro</h3>
+/* INPUTS */
+input, select {
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 8px;
+  border-radius: 8px;
+  border: none;
+  outline: none;
+  background: #0f172a;
+  color: white;
+}
 
-    <p id="total-receitas">Receitas: €0</p>
-    <p id="total-despesas">Despesas: €0</p>
-    <p id="total-dividas">Dívidas: €0</p>
+/* BOTÃO PRINCIPAL */
+button {
+  width: 100%;
+  padding: 10px;
+  background: #22c55e;
+  border: none;
+  color: white;
+  cursor: pointer;
+  border-radius: 8px;
+  margin-top: 5px;
+  font-weight: bold;
+}
 
-    <hr>
+button:hover {
+  opacity: 0.9;
+}
 
-    <p id="saldo">Saldo: €0</p>
-    <p id="saldo-real">Saldo real (com dívidas): €0</p>
-  </div>
+/* BOTÕES DE AÇÃO (EDITAR / EXCLUIR) */
+.actions {
+  display: flex;
+  gap: 5px;
+  margin-top: 8px;
+}
 
-  <!-- 📊 GRÁFICO -->
-  <div class="card">
-    <h3>📈 Ganhos vs Gastos</h3>
-    <canvas id="graficoFinanceiro"></canvas>
-  </div>
+.actions button {
+  width: 50%;
+  font-size: 12px;
+  background: #334155;
+  padding: 6px;
+}
 
-  <!-- RECEITAS -->
-  <div class="card">
-    <h3>➕ Nova Receita</h3>
+/* GRÁFICO (DEIXA MAIS BONITO) */
+canvas {
+  width: 100% !important;
+  height: 220px !important;
+  background: #0f172a;
+  border-radius: 10px;
+  padding: 10px;
+}
 
-    <input id="r-desc" placeholder="Descrição">
+/* TEXTOS MAIS SUAVES */
+p {
+  margin: 4px 0;
+}
 
-    <select id="r-cat">
-      <option value="Trabalho">Trabalho</option>
-      <option value="Freelance">Freelance</option>
-      <option value="Investimentos">Investimentos</option>
-      <option value="Outros">Outros</option>
-    </select>
+/* TITULOS */
+h1, h3 {
+  margin-bottom: 10px;
+}
 
-    <input id="r-val" type="number" placeholder="Valor">
+/* SCROLL SUAVE VISUAL */
+body::-webkit-scrollbar {
+  width: 6px;
+}
 
-    <select id="r-moeda">
-      <option value="EUR">Euro (€)</option>
-      <option value="BRL">Real (R$)</option>
-    </select>
-
-    <button onclick="addReceita()">Salvar Receita</button>
-  </div>
-
-  <div class="card">
-    <h3>📊 Lista de Receitas</h3>
-    <div id="lista-receitas"></div>
-  </div>
-
-  <!-- DESPESAS -->
-  <div class="card">
-    <h3>➖ Nova Despesa</h3>
-
-    <input id="d-desc" placeholder="Descrição">
-
-    <select id="d-cat">
-      <option value="Alimentação">Alimentação</option>
-      <option value="Transporte">Transporte</option>
-      <option value="Moradia">Moradia</option>
-      <option value="Lazer">Lazer</option>
-      <option value="Saúde">Saúde</option>
-      <option value="Outros">Outros</option>
-    </select>
-
-    <input id="d-val" type="number" placeholder="Valor">
-
-    <select id="d-moeda">
-      <option value="EUR">Euro (€)</option>
-      <option value="BRL">Real (R$)</option>
-    </select>
-
-    <button onclick="addDespesa()">Salvar Despesa</button>
-  </div>
-
-  <div class="card">
-    <h3>📉 Lista de Despesas</h3>
-    <div id="lista-despesas"></div>
-  </div>
-
-  <!-- DÍVIDAS -->
-  <div class="card">
-    <h3>💳 Nova Dívida</h3>
-
-    <input id="div-desc" placeholder="Ex: Cartão Nubank">
-    <input id="div-valor" type="number" placeholder="Valor">
-
-    <select id="div-moeda">
-      <option value="EUR">Euro (€)</option>
-      <option value="BRL">Real (R$)</option>
-    </select>
-
-    <button onclick="addDivida()">Salvar Dívida</button>
-  </div>
-
-  <div class="card">
-    <h3>📋 Suas Dívidas</h3>
-    <div id="lista-dividas"></div>
-  </div>
-
-  <!-- HISTÓRICO -->
-  <div class="card">
-    <h3>📜 Histórico de alterações</h3>
-    <div id="lista-historico"></div>
-  </div>
-
-</div>
-
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script type="module" src="app.js"></script>
-
-</body>
-</html>
+body::-webkit-scrollbar-thumb {
+  background: #334155;
+  border-radius: 10px;
+}
