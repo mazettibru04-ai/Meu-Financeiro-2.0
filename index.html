@@ -11,17 +11,17 @@
 
 <div class="container">
 
-  <h1>💎 Meu Financeiro 2.0</h1>
+  <h1>💰 Meu Financeiro 2.0</h1>
 
   <!-- CÂMBIO -->
-  <div class="card">
-    <h3>💱 Câmbio</h3>
+  <div class="card highlight">
+    <h3>💱 Câmbio atual</h3>
     <p id="cambio">Carregando...</p>
   </div>
 
   <!-- RESUMO -->
   <div class="card">
-    <h3>📊 Resumo</h3>
+    <h3>📊 Resumo financeiro</h3>
 
     <p id="total-receitas">Receitas: €0</p>
     <p id="total-despesas">Despesas: €0</p>
@@ -30,88 +30,101 @@
     <hr>
 
     <p id="saldo">Saldo: €0</p>
-    <p id="saldo-real">Saldo real: €0</p>
+    <p id="saldo-real">Saldo real (com dívidas): €0</p>
   </div>
 
-  <!-- GRÁFICOS -->
+  <!-- 📊 GRÁFICO -->
   <div class="card">
-    <h3>📊 Dashboard</h3>
-    <canvas id="graficoFinanceiro"></canvas>
-  </div>
+    <h3>📈 Ganhos vs Gastos</h3>
+    <h3>📊 Receitas por categoria</h3>
+<canvas id="graficoReceitas"></canvas>
 
-  <div class="card">
-    <h3>📈 Receitas</h3>
-    <canvas id="graficoReceitas"></canvas>
-  </div>
-
-  <div class="card">
-    <h3>📉 Despesas</h3>
-    <canvas id="graficoDespesas"></canvas>
+<h3>📊 Despesas por categoria</h3>
+<canvas id="graficoDespesas"></canvas>
   </div>
 
   <!-- RECEITAS -->
   <div class="card">
-    <h3>➕ Receita</h3>
+    <h3>➕ Nova Receita</h3>
+
     <input id="r-desc" placeholder="Descrição">
+
     <select id="r-cat">
-      <option>Trabalho</option>
-      <option>Freelance</option>
-      <option>Investimentos</option>
-      <option>Outros</option>
+      <option value="Trabalho">Trabalho</option>
+      <option value="Freelance">Freelance</option>
+      <option value="Investimentos">Investimentos</option>
+      <option value="Outros">Outros</option>
     </select>
+
     <input id="r-val" type="number" placeholder="Valor">
+
     <select id="r-moeda">
-      <option value="EUR">EUR</option>
-      <option value="BRL">BRL</option>
+      <option value="EUR">Euro (€)</option>
+      <option value="BRL">Real (R$)</option>
     </select>
-    <button onclick="addReceita()">Adicionar</button>
+
+    <button onclick="addReceita()">Salvar Receita</button>
   </div>
 
   <div class="card">
-    <h3>📋 Receitas</h3>
+    <h3>📊 Lista de Receitas</h3>
     <div id="lista-receitas"></div>
   </div>
 
   <!-- DESPESAS -->
   <div class="card">
-    <h3>➖ Despesa</h3>
+    <h3>➖ Nova Despesa</h3>
+
     <input id="d-desc" placeholder="Descrição">
+
     <select id="d-cat">
-      <option>Alimentação</option>
-      <option>Transporte</option>
-      <option>Moradia</option>
-      <option>Lazer</option>
-      <option>Saúde</option>
-      <option>Outros</option>
+      <option value="Alimentação">Alimentação</option>
+      <option value="Transporte">Transporte</option>
+      <option value="Moradia">Moradia</option>
+      <option value="Lazer">Lazer</option>
+      <option value="Saúde">Saúde</option>
+      <option value="Outros">Outros</option>
     </select>
+
     <input id="d-val" type="number" placeholder="Valor">
+
     <select id="d-moeda">
-      <option value="EUR">EUR</option>
-      <option value="BRL">BRL</option>
+      <option value="EUR">Euro (€)</option>
+      <option value="BRL">Real (R$)</option>
     </select>
-    <button onclick="addDespesa()">Adicionar</button>
+
+    <button onclick="addDespesa()">Salvar Despesa</button>
   </div>
 
   <div class="card">
-    <h3>📋 Despesas</h3>
+    <h3>📉 Lista de Despesas</h3>
     <div id="lista-despesas"></div>
   </div>
 
   <!-- DÍVIDAS -->
   <div class="card">
-    <h3>💳 Dívidas</h3>
-    <input id="div-desc" placeholder="Descrição">
+    <h3>💳 Nova Dívida</h3>
+
+    <input id="div-desc" placeholder="Ex: Cartão Nubank">
     <input id="div-valor" type="number" placeholder="Valor">
+
     <select id="div-moeda">
-      <option value="EUR">EUR</option>
-      <option value="BRL">BRL</option>
+      <option value="EUR">Euro (€)</option>
+      <option value="BRL">Real (R$)</option>
     </select>
-    <button onclick="addDivida()">Adicionar</button>
+
+    <button onclick="addDivida()">Salvar Dívida</button>
   </div>
 
   <div class="card">
-    <h3>📋 Lista de Dívidas</h3>
+    <h3>📋 Suas Dívidas</h3>
     <div id="lista-dividas"></div>
+  </div>
+
+  <!-- HISTÓRICO -->
+  <div class="card">
+    <h3>📜 Histórico de alterações</h3>
+    <div id="lista-historico"></div>
   </div>
 
 </div>
