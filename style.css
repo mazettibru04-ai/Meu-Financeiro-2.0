@@ -1,98 +1,127 @@
 body {
-  font-family: Arial;
-  background: #0f172a;
+  font-family: Arial, sans-serif;
+  background: radial-gradient(circle at top, #0f172a, #020617);
   color: white;
+  margin: 0;
 }
 
 /* CONTAINER */
 .container {
-  max-width: 650px;
+  max-width: 700px;
   margin: auto;
   padding: 20px;
 }
 
-/* CARD PRINCIPAL */
+/* TITULOS */
+h1 {
+  text-align: center;
+  font-size: 26px;
+  margin-bottom: 20px;
+}
+
+h3 {
+  margin-bottom: 10px;
+  font-size: 16px;
+  color: #cbd5e1;
+}
+
+/* CARD */
 .card {
-  background: #1e293b;
-  padding: 15px;
-  border-radius: 12px;
-  margin-bottom: 12px;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-  transition: 0.2s;
+  background: rgba(30, 41, 59, 0.9);
+  padding: 16px;
+  border-radius: 14px;
+  margin-bottom: 14px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+  transition: all 0.25s ease;
+  border: 1px solid rgba(255,255,255,0.05);
 }
 
 .card:hover {
-  transform: translateY(-2px);
+  transform: translateY(-3px);
+  border-color: rgba(56, 189, 248, 0.4);
 }
 
-/* DESTAQUE (CÂMBIO) */
+/* DESTAQUE */
 .highlight {
   border: 1px solid #38bdf8;
+  background: rgba(56, 189, 248, 0.05);
 }
 
 /* INPUTS */
 input, select {
   width: 100%;
-  padding: 10px;
-  margin-bottom: 8px;
-  border-radius: 8px;
-  border: none;
+  padding: 12px;
+  margin-bottom: 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.08);
   outline: none;
   background: #0f172a;
   color: white;
+  transition: 0.2s;
+}
+
+input:focus, select:focus {
+  border-color: #38bdf8;
+  box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.2);
 }
 
 /* BOTÃO PRINCIPAL */
 button {
   width: 100%;
-  padding: 10px;
-  background: #22c55e;
+  padding: 12px;
+  background: linear-gradient(135deg, #22c55e, #16a34a);
   border: none;
   color: white;
   cursor: pointer;
-  border-radius: 8px;
-  margin-top: 5px;
+  border-radius: 10px;
   font-weight: bold;
+  transition: 0.2s;
 }
 
 button:hover {
-  opacity: 0.9;
+  transform: scale(1.02);
+  opacity: 0.95;
 }
 
-/* BOTÕES DE AÇÃO (EDITAR / EXCLUIR) */
+/* BOTÕES DE AÇÃO */
 .actions {
   display: flex;
-  gap: 5px;
-  margin-top: 8px;
+  gap: 6px;
+  margin-top: 10px;
 }
 
 .actions button {
   width: 50%;
   font-size: 12px;
-  background: #334155;
   padding: 6px;
+  background: #334155;
+  border-radius: 8px;
 }
 
-/* GRÁFICO (DEIXA MAIS BONITO) */
+.actions button:hover {
+  background: #475569;
+}
+
+/* TEXTO */
+p {
+  margin: 5px 0;
+  color: #e2e8f0;
+}
+
+small {
+  color: #94a3b8;
+}
+
+/* GRÁFICO */
 canvas {
   width: 100% !important;
-  height: 220px !important;
-  background: #0f172a;
-  border-radius: 10px;
+  height: 240px !important;
+  background: rgba(15, 23, 42, 0.7);
+  border-radius: 12px;
   padding: 10px;
 }
 
-/* TEXTOS MAIS SUAVES */
-p {
-  margin: 4px 0;
-}
-
-/* TITULOS */
-h1, h3 {
-  margin-bottom: 10px;
-}
-
-/* SCROLL SUAVE VISUAL */
+/* SCROLL */
 body::-webkit-scrollbar {
   width: 6px;
 }
@@ -100,4 +129,11 @@ body::-webkit-scrollbar {
 body::-webkit-scrollbar-thumb {
   background: #334155;
   border-radius: 10px;
+}
+
+/* MELHORA ESPAÇAMENTO VISUAL */
+hr {
+  border: none;
+  border-top: 1px solid rgba(255,255,255,0.08);
+  margin: 10px 0;
 }
