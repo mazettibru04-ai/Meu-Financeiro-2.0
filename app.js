@@ -10,9 +10,9 @@ let chart;
 let chartReceitas;
 let chartDespesas;
 
-// 🎨 animação global
+// 🎨 ANIMAÇÃO GLOBAL
 Chart.defaults.animation = {
-  duration: 1600,
+  duration: 1800,
   easing: "easeOutQuart"
 };
 
@@ -43,11 +43,11 @@ function atualizarResumo() {
   const saldo = totalReceitas - totalDespesas;
   const saldoReal = saldo - totalDividas;
 
-  document.getElementById("total-receitas").innerText = `Receitas: €${totalReceitas.toFixed(2)}`;
-  document.getElementById("total-despesas").innerText = `Despesas: €${totalDespesas.toFixed(2)}`;
-  document.getElementById("total-dividas").innerText = `Dívidas: €${totalDividas.toFixed(2)}`;
-  document.getElementById("saldo").innerText = `Saldo: €${saldo.toFixed(2)}`;
-  document.getElementById("saldo-real").innerText = `Saldo real: €${saldoReal.toFixed(2)}`;
+  total-receitas.innerText = `Receitas: €${totalReceitas.toFixed(2)}`;
+  total-despesas.innerText = `Despesas: €${totalDespesas.toFixed(2)}`;
+  total-dividas.innerText = `Dívidas: €${totalDividas.toFixed(2)}`;
+  saldo.innerText = `Saldo: €${saldo.toFixed(2)}`;
+  saldo-real.innerText = `Saldo real: €${saldoReal.toFixed(2)}`;
 
   atualizarGrafico();
 }
@@ -69,8 +69,8 @@ function atualizarGrafico() {
       labels: ["Receitas", "Despesas", "Saldo"],
       datasets: [{
         data: [totalReceitas, totalDespesas, saldo],
-        backgroundColor: ["#22c55e", "#ef4444", "#3b82f6"],
-        borderRadius: 18
+        backgroundColor: ["#00ff88", "#ff2e63", "#00c2ff"],
+        borderRadius: 20
       }]
     },
     options: {
@@ -80,9 +80,9 @@ function atualizarGrafico() {
 }
 
 // =====================
-// RECEITAS
+// ADICIONAR
 // =====================
-window.addReceita = async function () {
+window.addReceita = async () => {
   await addDoc(collection(db, "receitas"), {
     desc: r-desc.value,
     categoria: r-cat.value,
@@ -92,10 +92,7 @@ window.addReceita = async function () {
   });
 };
 
-// =====================
-// DESPESAS
-// =====================
-window.addDespesa = async function () {
+window.addDespesa = async () => {
   await addDoc(collection(db, "despesas"), {
     desc: d-desc.value,
     categoria: d-cat.value,
@@ -105,10 +102,7 @@ window.addDespesa = async function () {
   });
 };
 
-// =====================
-// DÍVIDAS
-// =====================
-window.addDivida = async function () {
+window.addDivida = async () => {
   await addDoc(collection(db, "dividas"), {
     desc: div-desc.value,
     valorOriginal: Number(div-valor.value),
@@ -118,7 +112,7 @@ window.addDivida = async function () {
 };
 
 // =====================
-// STREAM RECEITAS
+// STREAMS
 // =====================
 onSnapshot(collection(db, "receitas"), snap => {
   totalReceitas = 0;
@@ -136,9 +130,6 @@ onSnapshot(collection(db, "receitas"), snap => {
   atualizarResumo();
 });
 
-// =====================
-// STREAM DESPESAS
-// =====================
 onSnapshot(collection(db, "despesas"), snap => {
   totalDespesas = 0;
   let html = "";
@@ -155,9 +146,6 @@ onSnapshot(collection(db, "despesas"), snap => {
   atualizarResumo();
 });
 
-// =====================
-// STREAM DÍVIDAS
-// =====================
 onSnapshot(collection(db, "dividas"), snap => {
   totalDividas = 0;
   let html = "";
