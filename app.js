@@ -14,7 +14,9 @@ let totalReceitas = 0;
 let totalDespesas = 0;
 let totalDividas = 0;
 
+// =====================
 // GRÁFICO
+// =====================
 let chart;
 
 function atualizarGrafico() {
@@ -24,20 +26,38 @@ function atualizarGrafico() {
 
   if (chart) chart.destroy();
 
+  const saldo = totalReceitas - totalDespesas;
+
   chart = new Chart(ctx, {
     type: "bar",
     data: {
-      labels: ["Receitas", "Despesas"],
+      labels: ["Receitas", "Despesas", "Saldo"],
       datasets: [{
-        label: "€ (Euro)",
-        data: [totalReceitas, totalDespesas],
-        backgroundColor: ["#22c55e", "#ef4444"]
+        label: "€ Euro",
+        data: [totalReceitas, totalDespesas, saldo],
+        backgroundColor: [
+          "#22c55e",
+          "#ef4444",
+          "#3b82f6"
+        ],
+        borderRadius: 10,
+        barThickness: 45
       }]
     },
     options: {
       responsive: true,
       plugins: {
         legend: { display: false }
+      },
+      scales: {
+        x: {
+          grid: { display: false },
+          ticks: { color: "#fff" }
+        },
+        y: {
+          grid: { color: "rgba(255,255,255,0.1)" },
+          ticks: { color: "#fff" }
+        }
       }
     }
   });
@@ -47,12 +67,19 @@ function atualizarGrafico() {
 // CÂMBIO
 // =====================
 async function pegarCambio() {
-  const res = await fetch("https://api.exchangerate-api.com/v4/latest/EUR");
-  const data = await res.json();
-  taxa = data?.rates?.BRL || 0;
+  try {
+    const res = await fetch("https://api.exchangerate-api.com/v4/latest/EUR");
+    const data = await res.json();
 
-  document.getElementById("cambio").innerText =
-    `€1 = R$ ${taxa.toFixed(2)}`;
+    taxa = data?.rates?.BRL || 0;
+
+    document.getElementById("cambio").innerText =
+      `€1 = R$ ${taxa.toFixed(2)}`;
+
+  } catch (err) {
+    document.getElementById("cambio").innerText =
+      "Erro ao carregar câmbio";
+  }
 }
 
 pegarCambio();
@@ -100,6 +127,8 @@ window.addReceita = async function () {
   const val = Number(document.getElementById("r-val").value);
   const moeda = document.getElementById("r-moeda").value;
 
+  if (!desc || val <= 0) return alert("Preencha corretamente");
+
   await addDoc(collection(db, "receitas"), {
     desc,
     categoria: cat,
@@ -107,6 +136,9 @@ window.addReceita = async function () {
     moeda,
     criadoEm: Date.now()
   });
+
+  document.getElementById("r-desc").value = "";
+  document.getElementById("r-val").value = "";
 };
 
 // =====================
@@ -118,6 +150,8 @@ window.addDespesa = async function () {
   const val = Number(document.getElementById("d-val").value);
   const moeda = document.getElementById("d-moeda").value;
 
+  if (!desc || val <= 0) return alert("Preencha corretamente");
+
   await addDoc(collection(db, "despesas"), {
     desc,
     categoria: cat,
@@ -125,6 +159,9 @@ window.addDespesa = async function () {
     moeda,
     criadoEm: Date.now()
   });
+
+  document.getElementById("d-desc").value = "";
+  document.getElementById("d-val").value = "";
 };
 
 // =====================
@@ -135,6 +172,8 @@ window.addDivida = async function () {
   const valor = Number(document.getElementById("div-valor").value);
   const moeda = document.getElementById("div-moeda").value;
 
+  if (!desc || valor <= 0) return alert("Preencha corretamente");
+
   await addDoc(collection(db, "dividas"), {
     desc,
     valorOriginal: valor,
@@ -142,6 +181,9 @@ window.addDivida = async function () {
     pago: 0,
     criadoEm: Date.now()
   });
+
+  document.getElementById("div-desc").value = "";
+  document.getElementById("div-valor").value = "";
 };
 
 // =====================
