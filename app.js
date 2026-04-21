@@ -275,12 +275,14 @@ window.addDivida = async function () {
 // =====================
 onSnapshot(collection(db, "receitas"), (snap) => {
   totalReceitas = 0;
+  let lista = [];
   let html = "";
 
   snap.forEach((i) => {
     const r = i.data();
-    const v = eur(r.val, r.moeda);
+    lista.push(r);
 
+    const v = eur(r.val, r.moeda);
     totalReceitas += v;
 
     html += `
@@ -294,6 +296,12 @@ onSnapshot(collection(db, "receitas"), (snap) => {
   });
 
   document.getElementById("lista-receitas").innerHTML = html;
+
+  atualizarResumo();
+  atualizarGraficoReceitas(lista);
+});
+
+  document.getElementById("lista-receitas").innerHTML = html;
   atualizarResumo();
 });
 
@@ -302,12 +310,14 @@ onSnapshot(collection(db, "receitas"), (snap) => {
 // =====================
 onSnapshot(collection(db, "despesas"), (snap) => {
   totalDespesas = 0;
+  let lista = [];
   let html = "";
 
   snap.forEach((i) => {
     const d = i.data();
-    const v = eur(d.val, d.moeda);
+    lista.push(d);
 
+    const v = eur(d.val, d.moeda);
     totalDespesas += v;
 
     html += `
@@ -320,6 +330,11 @@ onSnapshot(collection(db, "despesas"), (snap) => {
     `;
   });
 
+  document.getElementById("lista-despesas").innerHTML = html;
+
+  atualizarResumo();
+  atualizarGraficoDespesas(lista);
+});
   document.getElementById("lista-despesas").innerHTML = html;
   atualizarResumo();
 });
