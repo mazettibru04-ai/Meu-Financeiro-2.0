@@ -33,17 +33,25 @@
     <p id="saldo-real">Saldo real (com dívidas): €0</p>
   </div>
 
-  <!-- 📊 GRÁFICO (GANHOS VS GASTOS) -->
+  <!-- 📊 GRÁFICO -->
   <div class="card">
     <h3>📈 Ganhos vs Gastos</h3>
-    <p style="font-size:12px; opacity:0.7;">Visão rápida estilo banco</p>
     <canvas id="graficoFinanceiro"></canvas>
   </div>
 
   <!-- RECEITAS -->
   <div class="card">
     <h3>➕ Nova Receita</h3>
+
     <input id="r-desc" placeholder="Descrição">
+
+    <select id="r-cat">
+      <option value="Trabalho">Trabalho</option>
+      <option value="Freelance">Freelance</option>
+      <option value="Investimentos">Investimentos</option>
+      <option value="Outros">Outros</option>
+    </select>
+
     <input id="r-val" type="number" placeholder="Valor">
 
     <select id="r-moeda">
@@ -62,7 +70,18 @@
   <!-- DESPESAS -->
   <div class="card">
     <h3>➖ Nova Despesa</h3>
+
     <input id="d-desc" placeholder="Descrição">
+
+    <select id="d-cat">
+      <option value="Alimentação">Alimentação</option>
+      <option value="Transporte">Transporte</option>
+      <option value="Moradia">Moradia</option>
+      <option value="Lazer">Lazer</option>
+      <option value="Saúde">Saúde</option>
+      <option value="Outros">Outros</option>
+    </select>
+
     <input id="d-val" type="number" placeholder="Valor">
 
     <select id="d-moeda">
@@ -81,6 +100,7 @@
   <!-- DÍVIDAS -->
   <div class="card">
     <h3>💳 Nova Dívida</h3>
+
     <input id="div-desc" placeholder="Ex: Cartão Nubank">
     <input id="div-valor" type="number" placeholder="Valor">
 
@@ -105,10 +125,7 @@
 
 </div>
 
-<!-- 📊 Chart.js (OBRIGATÓRIO pro gráfico funcionar) -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-<!-- APP -->
 <script type="module" src="app.js"></script>
 
 </body>
