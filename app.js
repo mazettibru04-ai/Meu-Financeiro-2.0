@@ -18,6 +18,90 @@ let totalDividas = 0;
 // GRÁFICO
 // =====================
 let chart;
+let chartReceitas;
+let chartDespesas;
+
+function atualizarGraficoDespesas(lista) {
+  const ctx = document.getElementById("graficoDespesas");
+  if (!ctx) return;
+
+  const dados = agruparPorCategoria(lista);
+
+  const labels = Object.keys(dados);
+  const valores = Object.values(dados);
+
+  const cores = [
+    "#ef4444",
+    "#f97316",
+    "#3b82f6",
+    "#ec4899",
+    "#10b981",
+    "#94a3b8"
+  ];
+
+  if (chartDespesas) chartDespesas.destroy();
+
+  chartDespesas = new Chart(ctx, {
+    type: "doughnut",
+    data: {
+      labels,
+      datasets: [{
+        data: valores,
+        backgroundColor: cores
+      }]
+    },
+    options: {
+      plugins: {
+        legend: {
+          labels: { color: "#fff" }
+        }
+      }
+    }
+  });
+}
+function atualizarGraficoReceitas(lista) {
+  const ctx = document.getElementById("graficoReceitas");
+  if (!ctx) return;
+
+  const dados = agruparPorCategoria(lista);
+
+  const labels = Object.keys(dados);
+  const valores = Object.values(dados);
+
+  const cores = ["#22c55e", "#3b82f6", "#a855f7", "#94a3b8"];
+
+  if (chartReceitas) chartReceitas.destroy();
+
+  chartReceitas = new Chart(ctx, {
+    type: "doughnut",
+    data: {
+      labels,
+      datasets: [{
+        data: valores,
+        backgroundColor: cores
+      }]
+    },
+    options: {
+      plugins: {
+        legend: {
+          labels: { color: "#fff" }
+        }
+      }
+    }
+  });
+}
+function agruparPorCategoria(lista, campoValor = "val", campoCat = "categoria") {
+  const dados = {};
+
+  lista.forEach(item => {
+    const cat = item[campoCat] || "Outros";
+    const valor = eur(item[campoValor], item.moeda);
+
+    dados[cat] = (dados[cat] || 0) + valor;
+  });
+
+  return dados;
+}
 
 function atualizarGrafico() {
   const ctx = document.getElementById("graficoFinanceiro");
