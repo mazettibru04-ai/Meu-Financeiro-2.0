@@ -14,55 +14,32 @@ let totalReceitas = 0;
 let totalDespesas = 0;
 let totalDividas = 0;
 
-// =====================
-// 📊 GRÁFICO
-// =====================
+// GRÁFICO
 let chart;
 
 function atualizarGrafico() {
-  const ctx = document.getElementById("graficoFinanceiro").getContext("2d");
+  const ctx = document.getElementById("graficoFinanceiro");
 
-  const dados = {
-    labels: ["Receitas", "Despesas"],
-    datasets: [{
-      data: [totalReceitas, totalDespesas],
-      backgroundColor: ["#22c55e", "#ef4444"],
-      borderRadius: 10
-    }]
-  };
+  if (!ctx) return;
 
-  if (chart) {
-    chart.data = dados;
-    chart.update();
-  } else {
-    chart = new Chart(ctx, {
-      type: "bar",
-      data: dados,
-      options: {
-        responsive: true,
-        plugins: {
-          legend: { display: false }
-        },
-        scales: {
-          y: {
-            beginAtZero: true
-          }
-        }
+  if (chart) chart.destroy();
+
+  chart = new Chart(ctx, {
+    type: "bar",
+    data: {
+      labels: ["Receitas", "Despesas"],
+      datasets: [{
+        label: "€ (Euro)",
+        data: [totalReceitas, totalDespesas],
+        backgroundColor: ["#22c55e", "#ef4444"]
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { display: false }
       }
-    });
-  }
-}
-
-// =====================
-// HISTÓRICO
-// =====================
-async function log(tipo, colecao, antes, depois) {
-  await addDoc(collection(db, "historico"), {
-    tipo,
-    colecao,
-    antes,
-    depois,
-    data: Date.now()
+    }
   });
 }
 
@@ -70,19 +47,12 @@ async function log(tipo, colecao, antes, depois) {
 // CÂMBIO
 // =====================
 async function pegarCambio() {
-  try {
-    const res = await fetch("https://api.exchangerate-api.com/v4/latest/EUR");
-    const data = await res.json();
+  const res = await fetch("https://api.exchangerate-api.com/v4/latest/EUR");
+  const data = await res.json();
+  taxa = data?.rates?.BRL || 0;
 
-    taxa = data?.rates?.BRL || 0;
-
-    document.getElementById("cambio").innerText =
-      `€1 = R$ ${taxa.toFixed(2)}`;
-
-  } catch (err) {
-    document.getElementById("cambio").innerText =
-      "Erro ao carregar câmbio";
-  }
+  document.getElementById("cambio").innerText =
+    `€1 = R$ ${taxa.toFixed(2)}`;
 }
 
 pegarCambio();
@@ -117,60 +87,53 @@ function atualizarResumo() {
 
   document.getElementById("saldo-real").innerText =
     `Saldo real (com dívidas): € ${saldoReal.toFixed(2)}`;
+
+  atualizarGrafico();
 }
 
 // =====================
-// ➕ RECEITA
+// RECEITA
 // =====================
 window.addReceita = async function () {
   const desc = document.getElementById("r-desc").value;
+  const cat = document.getElementById("r-cat").value;
   const val = Number(document.getElementById("r-val").value);
   const moeda = document.getElementById("r-moeda").value;
 
-  if (!desc || val <= 0) return alert("Preencha corretamente");
-
   await addDoc(collection(db, "receitas"), {
     desc,
+    categoria: cat,
     val,
     moeda,
     criadoEm: Date.now()
   });
-
-  await log("CREATE", "receitas", null, { desc, val, moeda });
-
-  document.getElementById("r-desc").value = "";
-  document.getElementById("r-val").value = "";
 };
 
 // =====================
-// ➖ DESPESA
+// DESPESA
 // =====================
 window.addDespesa = async function () {
   const desc = document.getElementById("d-desc").value;
+  const cat = document.getElementById("d-cat").value;
   const val = Number(document.getElementById("d-val").value);
   const moeda = document.getElementById("d-moeda").value;
 
-  if (!desc || val <= 0) return alert("Preencha corretamente");
-
   await addDoc(collection(db, "despesas"), {
     desc,
+    categoria: cat,
     val,
     moeda,
     criadoEm: Date.now()
   });
-
-  await log("CREATE", "despesas", null, { desc, val, moeda });
 };
 
 // =====================
-// ➕ DÍVIDA
+// DÍVIDAS
 // =====================
 window.addDivida = async function () {
   const desc = document.getElementById("div-desc").value;
   const valor = Number(document.getElementById("div-valor").value);
   const moeda = document.getElementById("div-moeda").value;
-
-  if (!desc || valor <= 0) return alert("Preencha corretamente");
 
   await addDoc(collection(db, "dividas"), {
     desc,
@@ -179,37 +142,6 @@ window.addDivida = async function () {
     pago: 0,
     criadoEm: Date.now()
   });
-
-  await log("CREATE", "dividas", null, { desc, valor, moeda });
-};
-
-// =====================
-// DELETE
-// =====================
-window.del = async function (col, id, data) {
-  if (!confirm("Tem certeza que deseja excluir?")) return;
-
-  await deleteDoc(doc(db, col, id));
-  await log("DELETE", col, data, null);
-};
-
-// =====================
-// EDIT
-// =====================
-window.edit = async function (col, id, data) {
-  const desc = prompt("Descrição:", data.desc);
-  const val = prompt("Valor:", data.val);
-
-  if (!desc || !val) return;
-
-  const updated = { ...data, desc, val: Number(val) };
-
-  await updateDoc(doc(db, col, id), {
-    desc,
-    val: Number(val)
-  });
-
-  await log("EDIT", col, data, updated);
 };
 
 // =====================
@@ -228,20 +160,15 @@ onSnapshot(collection(db, "receitas"), (snap) => {
     html += `
       <div class="card">
         <strong>${r.desc}</strong>
+        <p>📁 ${r.categoria}</p>
         <p>${r.moeda} ${r.val}</p>
         <small>€ ${v.toFixed(2)}</small>
-
-        <div class="actions">
-          <button onclick='edit("receitas","${i.id}",${JSON.stringify(r)})'>Editar</button>
-          <button onclick='del("receitas","${i.id}",${JSON.stringify(r)})'>Excluir</button>
-        </div>
       </div>
     `;
   });
 
   document.getElementById("lista-receitas").innerHTML = html;
   atualizarResumo();
-  atualizarGrafico();
 });
 
 // =====================
@@ -260,20 +187,15 @@ onSnapshot(collection(db, "despesas"), (snap) => {
     html += `
       <div class="card">
         <strong>${d.desc}</strong>
+        <p>📁 ${d.categoria}</p>
         <p>${d.moeda} ${d.val}</p>
         <small>€ ${v.toFixed(2)}</small>
-
-        <div class="actions">
-          <button onclick='edit("despesas","${i.id}",${JSON.stringify(d)})'>Editar</button>
-          <button onclick='del("despesas","${i.id}",${JSON.stringify(d)})'>Excluir</button>
-        </div>
       </div>
     `;
   });
 
   document.getElementById("lista-despesas").innerHTML = html;
   atualizarResumo();
-  atualizarGrafico();
 });
 
 // =====================
@@ -293,37 +215,10 @@ onSnapshot(collection(db, "dividas"), (snap) => {
       <div class="card">
         <strong>${d.desc}</strong>
         <p>Total: ${d.moeda} ${d.valorOriginal}</p>
-
-        <div class="actions">
-          <button onclick='edit("dividas","${i.id}",${JSON.stringify(d)})'>Editar</button>
-          <button onclick='del("dividas","${i.id}",${JSON.stringify(d)})'>Excluir</button>
-        </div>
       </div>
     `;
   });
 
   document.getElementById("lista-dividas").innerHTML = html;
   atualizarResumo();
-  atualizarGrafico();
-});
-
-// =====================
-// HISTÓRICO
-// =====================
-onSnapshot(collection(db, "historico"), (snap) => {
-  let html = "";
-
-  snap.forEach((i) => {
-    const h = i.data();
-
-    html += `
-      <div class="card">
-        <strong>${h.tipo} - ${h.colecao}</strong>
-        <p>ANTES: ${JSON.stringify(h.antes)}</p>
-        <p>DEPOIS: ${JSON.stringify(h.depois)}</p>
-      </div>
-    `;
-  });
-
-  document.getElementById("lista-historico").innerHTML = html;
 });
