@@ -15,6 +15,45 @@ let totalDespesas = 0;
 let totalDividas = 0;
 
 // =====================
+// 📊 GRÁFICO
+// =====================
+let chart;
+
+function atualizarGrafico() {
+  const ctx = document.getElementById("graficoFinanceiro").getContext("2d");
+
+  const dados = {
+    labels: ["Receitas", "Despesas"],
+    datasets: [{
+      data: [totalReceitas, totalDespesas],
+      backgroundColor: ["#22c55e", "#ef4444"],
+      borderRadius: 10
+    }]
+  };
+
+  if (chart) {
+    chart.data = dados;
+    chart.update();
+  } else {
+    chart = new Chart(ctx, {
+      type: "bar",
+      data: dados,
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { display: false }
+        },
+        scales: {
+          y: {
+            beginAtZero: true
+          }
+        }
+      }
+    });
+  }
+}
+
+// =====================
 // HISTÓRICO
 // =====================
 async function log(tipo, colecao, antes, depois) {
@@ -121,9 +160,6 @@ window.addDespesa = async function () {
   });
 
   await log("CREATE", "despesas", null, { desc, val, moeda });
-
-  document.getElementById("d-desc").value = "";
-  document.getElementById("d-val").value = "";
 };
 
 // =====================
@@ -145,9 +181,6 @@ window.addDivida = async function () {
   });
 
   await log("CREATE", "dividas", null, { desc, valor, moeda });
-
-  document.getElementById("div-desc").value = "";
-  document.getElementById("div-valor").value = "";
 };
 
 // =====================
@@ -208,6 +241,7 @@ onSnapshot(collection(db, "receitas"), (snap) => {
 
   document.getElementById("lista-receitas").innerHTML = html;
   atualizarResumo();
+  atualizarGrafico();
 });
 
 // =====================
@@ -239,6 +273,7 @@ onSnapshot(collection(db, "despesas"), (snap) => {
 
   document.getElementById("lista-despesas").innerHTML = html;
   atualizarResumo();
+  atualizarGrafico();
 });
 
 // =====================
@@ -258,7 +293,6 @@ onSnapshot(collection(db, "dividas"), (snap) => {
       <div class="card">
         <strong>${d.desc}</strong>
         <p>Total: ${d.moeda} ${d.valorOriginal}</p>
-        <p>Pago: ${d.pago}</p>
 
         <div class="actions">
           <button onclick='edit("dividas","${i.id}",${JSON.stringify(d)})'>Editar</button>
@@ -270,6 +304,7 @@ onSnapshot(collection(db, "dividas"), (snap) => {
 
   document.getElementById("lista-dividas").innerHTML = html;
   atualizarResumo();
+  atualizarGrafico();
 });
 
 // =====================
