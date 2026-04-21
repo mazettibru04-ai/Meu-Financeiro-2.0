@@ -2,12 +2,12 @@ import { db } from "./firebase.js";
 import {
   collection,
   addDoc,
-  onSnapshot,
-  doc,
-  updateDoc,
-  deleteDoc
+  onSnapshot
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
+// =====================
+// VARIÁVEIS
+// =====================
 let taxa = 0;
 
 let totalReceitas = 0;
@@ -15,12 +15,43 @@ let totalDespesas = 0;
 let totalDividas = 0;
 
 // =====================
-// GRÁFICO
+// GRÁFICOS
 // =====================
 let chart;
 let chartReceitas;
 let chartDespesas;
 
+// =====================
+// CATEGORIAS CORES
+// =====================
+const coresCategoria = {
+  Alimentação: "#ef4444",
+  Transporte: "#3b82f6",
+  Moradia: "#f97316",
+  Saúde: "#10b981",
+  Lazer: "#a855f7",
+  Outros: "#94a3b8"
+};
+
+// =====================
+// AGRUPAR CATEGORIAS
+// =====================
+function agruparPorCategoria(lista, campoValor = "val", campoCat = "categoria") {
+  const dados = {};
+
+  lista.forEach(item => {
+    const cat = item[campoCat] || "Outros";
+    const valor = eur(item[campoValor], item.moeda);
+
+    dados[cat] = (dados[cat] || 0) + valor;
+  });
+
+  return dados;
+}
+
+// =====================
+// GRÁFICO DESPESAS
+// =====================
 function atualizarGraficoDespesas(lista) {
   const ctx = document.getElementById("graficoDespesas");
   if (!ctx) return;
@@ -29,15 +60,7 @@ function atualizarGraficoDespesas(lista) {
 
   const labels = Object.keys(dados);
   const valores = Object.values(dados);
-
-  const cores = [
-    "#ef4444",
-    "#f97316",
-    "#3b82f6",
-    "#ec4899",
-    "#10b981",
-    "#94a3b8"
-  ];
+  const cores = labels.map(c => coresCategoria[c] || "#999");
 
   if (chartDespesas) chartDespesas.destroy();
 
@@ -59,6 +82,10 @@ function atualizarGraficoDespesas(lista) {
     }
   });
 }
+
+// =====================
+// GRÁFICO RECEITAS
+// =====================
 function atualizarGraficoReceitas(lista) {
   const ctx = document.getElementById("graficoReceitas");
   if (!ctx) return;
@@ -68,8 +95,6 @@ function atualizarGraficoReceitas(lista) {
   const labels = Object.keys(dados);
   const valores = Object.values(dados);
 
-  const cores = ["#22c55e", "#3b82f6", "#a855f7", "#94a3b8"];
-
   if (chartReceitas) chartReceitas.destroy();
 
   chartReceitas = new Chart(ctx, {
@@ -78,7 +103,7 @@ function atualizarGraficoReceitas(lista) {
       labels,
       datasets: [{
         data: valores,
-        backgroundColor: cores
+        backgroundColor: ["#22c55e", "#3b82f6", "#a855f7", "#94a3b8"]
       }]
     },
     options: {
@@ -90,22 +115,12 @@ function atualizarGraficoReceitas(lista) {
     }
   });
 }
-function agruparPorCategoria(lista, campoValor = "val", campoCat = "categoria") {
-  const dados = {};
 
-  lista.forEach(item => {
-    const cat = item[campoCat] || "Outros";
-    const valor = eur(item[campoValor], item.moeda);
-
-    dados[cat] = (dados[cat] || 0) + valor;
-  });
-
-  return dados;
-}
-
+// =====================
+// GRÁFICO GERAL
+// =====================
 function atualizarGrafico() {
   const ctx = document.getElementById("graficoFinanceiro");
-
   if (!ctx) return;
 
   if (chart) chart.destroy();
@@ -117,31 +132,19 @@ function atualizarGrafico() {
     data: {
       labels: ["Receitas", "Despesas", "Saldo"],
       datasets: [{
-        label: "€ Euro",
         data: [totalReceitas, totalDespesas, saldo],
-        backgroundColor: [
-          "#22c55e",
-          "#ef4444",
-          "#3b82f6"
-        ],
+        backgroundColor: ["#22c55e", "#ef4444", "#3b82f6"],
         borderRadius: 10,
         barThickness: 45
       }]
     },
     options: {
-      responsive: true,
       plugins: {
         legend: { display: false }
       },
       scales: {
-        x: {
-          grid: { display: false },
-          ticks: { color: "#fff" }
-        },
-        y: {
-          grid: { color: "rgba(255,255,255,0.1)" },
-          ticks: { color: "#fff" }
-        }
+        x: { ticks: { color: "#fff" } },
+        y: { ticks: { color: "#fff" } }
       }
     }
   });
@@ -160,7 +163,7 @@ async function pegarCambio() {
     document.getElementById("cambio").innerText =
       `€1 = R$ ${taxa.toFixed(2)}`;
 
-  } catch (err) {
+  } catch {
     document.getElementById("cambio").innerText =
       "Erro ao carregar câmbio";
   }
@@ -203,7 +206,7 @@ function atualizarResumo() {
 }
 
 // =====================
-// RECEITA
+// ADICIONAR RECEITA
 // =====================
 window.addReceita = async function () {
   const desc = document.getElementById("r-desc").value;
@@ -226,7 +229,7 @@ window.addReceita = async function () {
 };
 
 // =====================
-// DESPESA
+// ADICIONAR DESPESA
 // =====================
 window.addDespesa = async function () {
   const desc = document.getElementById("d-desc").value;
@@ -249,7 +252,7 @@ window.addDespesa = async function () {
 };
 
 // =====================
-// DÍVIDAS
+// ADICIONAR DÍVIDA
 // =====================
 window.addDivida = async function () {
   const desc = document.getElementById("div-desc").value;
@@ -271,7 +274,7 @@ window.addDivida = async function () {
 };
 
 // =====================
-// RECEITAS STREAM
+// STREAM RECEITAS
 // =====================
 onSnapshot(collection(db, "receitas"), (snap) => {
   totalReceitas = 0;
@@ -280,15 +283,15 @@ onSnapshot(collection(db, "receitas"), (snap) => {
 
   snap.forEach((i) => {
     const r = i.data();
-    lista.push(r);
-
     const v = eur(r.val, r.moeda);
+
     totalReceitas += v;
+    lista.push(r);
 
     html += `
       <div class="card">
         <strong>${r.desc}</strong>
-        <p>📁 ${r.categoria}</p>
+        <p>${r.categoria}</p>
         <p>${r.moeda} ${r.val}</p>
         <small>€ ${v.toFixed(2)}</small>
       </div>
@@ -301,12 +304,8 @@ onSnapshot(collection(db, "receitas"), (snap) => {
   atualizarGraficoReceitas(lista);
 });
 
-  document.getElementById("lista-receitas").innerHTML = html;
-  atualizarResumo();
-});
-
 // =====================
-// DESPESAS STREAM
+// STREAM DESPESAS
 // =====================
 onSnapshot(collection(db, "despesas"), (snap) => {
   totalDespesas = 0;
@@ -315,15 +314,15 @@ onSnapshot(collection(db, "despesas"), (snap) => {
 
   snap.forEach((i) => {
     const d = i.data();
-    lista.push(d);
-
     const v = eur(d.val, d.moeda);
+
     totalDespesas += v;
+    lista.push(d);
 
     html += `
       <div class="card">
         <strong>${d.desc}</strong>
-        <p>📁 ${d.categoria}</p>
+        <p>${d.categoria}</p>
         <p>${d.moeda} ${d.val}</p>
         <small>€ ${v.toFixed(2)}</small>
       </div>
@@ -335,12 +334,9 @@ onSnapshot(collection(db, "despesas"), (snap) => {
   atualizarResumo();
   atualizarGraficoDespesas(lista);
 });
-  document.getElementById("lista-despesas").innerHTML = html;
-  atualizarResumo();
-});
 
 // =====================
-// DÍVIDAS STREAM
+// STREAM DÍVIDAS
 // =====================
 onSnapshot(collection(db, "dividas"), (snap) => {
   totalDividas = 0;
@@ -355,11 +351,12 @@ onSnapshot(collection(db, "dividas"), (snap) => {
     html += `
       <div class="card">
         <strong>${d.desc}</strong>
-        <p>Total: ${d.moeda} ${d.valorOriginal}</p>
+        <p>${d.moeda} ${d.valorOriginal}</p>
       </div>
     `;
   });
 
   document.getElementById("lista-dividas").innerHTML = html;
+
   atualizarResumo();
 });
