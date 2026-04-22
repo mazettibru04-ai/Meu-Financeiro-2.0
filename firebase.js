@@ -7,12 +7,13 @@ import { getFirestore } from "https://www.gstatic.com/firebasejs/10.12.0/firebas
 import { getAuth } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
 const firebaseConfig = {
-  apiKey: "SUA_API_KEY",
-  authDomain: "SEU_PROJETO.firebaseapp.com",
-  projectId: "SEU_PROJETO_ID",
-  storageBucket: "SEU_PROJETO.appspot.com",
-  messagingSenderId: "SEU_SENDER_ID",
-  appId: "SEU_APP_ID"
+  apiKey: "AIzaSyCLSxAGB178Pm4EtWHLNXhE_xDj-XAuHFQ",
+  authDomain: "meu-fincaneiro.firebaseapp.com",
+  projectId: "meu-fincaneiro",
+  storageBucket: "meu-fincaneiro.firebasestorage.app",
+  messagingSenderId: "836819309794",
+  appId: "1:836819309794:web:7e0526e138dea6d2cebabb",
+  measurementId: "G-ESG21PJSJ1"
 };
 
 const app = initializeApp(firebaseConfig);
