@@ -4,7 +4,8 @@ import {
   doc, onSnapshot, orderBy, query, limit
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 import {
-  signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut
+  signInWithRedirect, getRedirectResult, GoogleAuthProvider,
+  onAuthStateChanged, signOut
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
 // =====================
@@ -90,9 +91,9 @@ function docRef(nome, id) {
 window.fazerLogin = async function () {
   try {
     const provider = new GoogleAuthProvider();
-    await signInWithPopup(auth, provider);
+    await signInWithRedirect(auth, provider);
   } catch (e) {
-    alert("Erro ao fazer login: " + e.message);
+    alert("Erro ao iniciar login: " + e.message);
   }
 };
 
@@ -102,6 +103,11 @@ window.fazerLogout = async function () {
   unsubs.length = 0;
   await signOut(auth);
 };
+
+// Captura o resultado do redirect ao voltar do Google
+getRedirectResult(auth).catch((e) => {
+  console.warn("Redirect result error:", e.message);
+});
 
 onAuthStateChanged(auth, (user) => {
   if (user) {
