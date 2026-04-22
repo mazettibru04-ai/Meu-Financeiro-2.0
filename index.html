@@ -3,409 +3,223 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Meu Sistema</title>
+  <title>Meu Financeiro 2.0</title>
   <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
 
-<!-- ===== LOGIN ===== -->
-<div id="tela-login" class="login-overlay">
-  <div class="login-box">
-    <div class="login-logo">🚀</div>
-    <h2 class="login-title">Meu Sistema</h2>
-    <p class="login-sub">Financeiro · Clientes · Estoque · Tarefas</p>
-    <button class="btn-google" onclick="fazerLogin()">
-      <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
-      Entrar com Google
-    </button>
-  </div>
-</div>
-
-<!-- ===== MODAIS ===== -->
-
-<!-- Modal Pagamento -->
+<!-- MODAL DE PAGAMENTO -->
 <div class="modal-overlay" id="modal-pagamento">
   <div class="modal">
-    <p class="modal-title" id="modal-nome"></p>
-    <p class="modal-subtitle" id="modal-moeda-info"></p>
+    <p class="modal-title" id="modal-nome">Dívida</p>
+    <p class="modal-subtitle" id="modal-moeda-info">Moeda original</p>
+
     <div class="ring-wrap">
-      <svg width="130" height="130" viewBox="0 0 130 130">
-        <circle class="ring-bg" cx="65" cy="65" r="52"/>
-        <circle class="ring-fill" id="ring-fill" cx="65" cy="65" r="52" stroke-dasharray="327" stroke-dashoffset="327" stroke="#22c55e"/>
+      <svg width="150" height="150" viewBox="0 0 150 150">
+        <circle class="ring-bg" cx="75" cy="75" r="60"/>
+        <circle class="ring-fill" id="ring-fill" cx="75" cy="75" r="60"
+          stroke-dasharray="377" stroke-dashoffset="377" stroke="#22c55e"/>
       </svg>
-      <div class="ring-text"><span class="ring-pct" id="ring-pct">0%</span><span class="ring-label">pago</span></div>
+      <div class="ring-text">
+        <span class="ring-pct" id="ring-pct">0%</span>
+        <span class="ring-label">pago</span>
+      </div>
     </div>
+
     <div class="modal-info">
-      <div class="modal-info-item"><div class="info-label">Total</div><div class="info-value red" id="modal-total">€0</div></div>
-      <div class="modal-info-item"><div class="info-label">Pago</div><div class="info-value green" id="modal-pago">€0</div></div>
-      <div class="modal-info-item"><div class="info-label">Resta</div><div class="info-value blue" id="modal-resta">€0</div></div>
+      <div class="modal-info-item">
+        <div class="info-label">Total</div>
+        <div class="info-value red" id="modal-total">€0</div>
+      </div>
+      <div class="modal-info-item">
+        <div class="info-label">Pago</div>
+        <div class="info-value green" id="modal-pago">€0</div>
+      </div>
+      <div class="modal-info-item">
+        <div class="info-label">Resta</div>
+        <div class="info-value blue" id="modal-resta">€0</div>
+      </div>
     </div>
+
     <div class="modal-input-group">
       <input type="number" id="modal-valor-pagar" placeholder="Valor a pagar" min="0" step="0.01">
       <button onclick="confirmarPagamento()">💸 Pagar</button>
     </div>
+
     <button class="btn-fechar" onclick="fecharModal('modal-pagamento')">✕ Fechar</button>
   </div>
 </div>
 
-<!-- Modal Corrigir -->
+<!-- MODAL CORRIGIR PAGAMENTO -->
 <div class="modal-overlay" id="modal-corrigir">
   <div class="modal">
     <p class="modal-title">🔧 Corrigir pagamento</p>
     <p class="modal-subtitle" id="corrigir-nome"></p>
-    <p id="corrigir-total" style="color:#94a3b8;font-size:13px;margin-bottom:4px"></p>
-    <p id="corrigir-atual" style="color:#f59e0b;font-size:13px;margin-bottom:16px"></p>
+
+    <div class="corrigir-info">
+      <p id="corrigir-total" style="color:#94a3b8; font-size:13px; margin-bottom:4px"></p>
+      <p id="corrigir-atual" style="color:#f59e0b; font-size:13px; margin-bottom:16px"></p>
+    </div>
+
     <label class="modal-label">Novo valor total pago</label>
-    <input type="number" id="corrigir-valor" min="0" step="0.01">
-    <p style="font-size:12px;color:#64748b;margin-bottom:16px">💡 Informe o total correto já pago. Para zerar, coloque 0.</p>
-    <button onclick="salvarCorrecao()" style="margin-bottom:8px;background:linear-gradient(135deg,#f59e0b,#d97706)">✅ Confirmar correção</button>
+    <input type="number" id="corrigir-valor" placeholder="Ex: 50" min="0" step="0.01">
+
+    <p style="font-size:12px; color:#64748b; margin-bottom:16px">
+      💡 Informe o valor correto total já pago (não o valor a adicionar). Para zerar, coloque 0.
+    </p>
+
+    <button onclick="salvarCorrecao()" style="margin-bottom:8px; background: linear-gradient(135deg,#f59e0b,#d97706)">
+      ✅ Confirmar correção
+    </button>
     <button class="btn-fechar" onclick="fecharModal('modal-corrigir')">✕ Cancelar</button>
   </div>
 </div>
 
-<!-- Modal Edição Lançamento -->
+<!-- MODAL DE EDIÇÃO -->
 <div class="modal-overlay" id="modal-edicao">
   <div class="modal">
     <p class="modal-title">✏️ Editar lançamento</p>
-    <p class="modal-subtitle" id="edit-subtitle"></p>
+    <p class="modal-subtitle" id="edit-subtitle">Altere os campos desejados</p>
+
     <input id="edit-desc" placeholder="Descrição">
     <select id="edit-cat" style="display:none"></select>
-    <input id="edit-val" type="number" min="0" step="0.01">
-    <select id="edit-moeda"><option value="EUR">Euro (€)</option><option value="BRL">Real (R$)</option></select>
-    <input id="edit-data" type="date">
-    <button onclick="salvarEdicao()" style="margin-bottom:8px">💾 Salvar</button>
+    <input id="edit-val" type="number" placeholder="Valor" min="0" step="0.01">
+    <select id="edit-moeda">
+      <option value="EUR">Euro (€)</option>
+      <option value="BRL">Real (R$)</option>
+    </select>
+
+    <button onclick="salvarEdicao()" style="margin-bottom:8px">💾 Salvar alterações</button>
     <button class="btn-fechar" onclick="fecharModal('modal-edicao')">✕ Cancelar</button>
   </div>
 </div>
 
-<!-- Modal Cliente -->
-<div class="modal-overlay" id="modal-cliente">
-  <div class="modal">
-    <p class="modal-title" id="cliente-modal-titulo">➕ Novo Cliente</p>
-    <input id="c-nome" placeholder="Nome completo">
-    <input id="c-empresa" placeholder="Empresa (opcional)">
-    <input id="c-email" type="email" placeholder="E-mail">
-    <input id="c-telefone" placeholder="Telefone">
-    <select id="c-status">
-      <option value="Ativo">Ativo</option>
-      <option value="Inativo">Inativo</option>
-      <option value="Prospect">Prospect</option>
-    </select>
-    <input id="c-notas" placeholder="Notas (opcional)">
-    <button onclick="salvarCliente()" style="margin-bottom:8px">💾 Salvar</button>
-    <button class="btn-fechar" onclick="fecharModal('modal-cliente')">✕ Cancelar</button>
-  </div>
-</div>
+<div class="container">
 
-<!-- Modal Produto -->
-<div class="modal-overlay" id="modal-produto">
-  <div class="modal">
-    <p class="modal-title" id="produto-modal-titulo">➕ Novo Produto</p>
-    <input id="p-nome" placeholder="Nome do produto">
-    <select id="p-cat">
-      <option value="Eletrônicos">Eletrônicos</option>
-      <option value="Vestuário">Vestuário</option>
-      <option value="Alimentos">Alimentos</option>
-      <option value="Ferramentas">Ferramentas</option>
+  <h1>💰 Meu Financeiro 2.0</h1>
+
+  <!-- CÂMBIO -->
+  <div class="card highlight">
+    <h3>💱 Câmbio atual</h3>
+    <p id="cambio">Carregando...</p>
+  </div>
+
+  <!-- RESUMO -->
+  <div class="card">
+    <h3>📊 Resumo financeiro</h3>
+    <p id="total-receitas">Receitas: €0</p>
+    <p id="total-despesas">Despesas: €0</p>
+    <p id="total-dividas">Dívidas: €0</p>
+    <hr>
+    <p id="saldo">Saldo: €0</p>
+    <p id="saldo-real">Saldo real (com dívidas): €0</p>
+  </div>
+
+  <!-- GRÁFICO -->
+  <div class="card">
+    <h3>📈 Ganhos vs Gastos</h3>
+    <canvas id="graficoFinanceiro"></canvas>
+  </div>
+
+  <!-- RECEITAS FORM -->
+  <div class="card">
+    <h3>➕ Nova Receita</h3>
+    <input id="r-desc" placeholder="Descrição">
+    <select id="r-cat">
+      <option value="Trabalho">Trabalho</option>
+      <option value="Freelance">Freelance</option>
+      <option value="Investimentos">Investimentos</option>
       <option value="Outros">Outros</option>
     </select>
-    <input id="p-quantidade" type="number" placeholder="Quantidade em estoque" min="0">
-    <input id="p-preco" type="number" placeholder="Preço unitário (€)" min="0" step="0.01">
-    <input id="p-min" type="number" placeholder="Estoque mínimo (alerta)" min="0">
-    <button onclick="salvarProduto()" style="margin-bottom:8px">💾 Salvar</button>
-    <button class="btn-fechar" onclick="fecharModal('modal-produto')">✕ Cancelar</button>
+    <input id="r-val" type="number" placeholder="Valor" min="0">
+    <select id="r-moeda">
+      <option value="EUR">Euro (€)</option>
+      <option value="BRL">Real (R$)</option>
+    </select>
+    <button onclick="addReceita()">Salvar Receita</button>
   </div>
+
+  <!-- RECEITAS LISTA -->
+  <div class="card">
+    <div class="section-header" onclick="toggleSection('lista-receitas-wrap')">
+      <h3>📊 Lista de Receitas <span id="count-receitas" class="count-badge"></span></h3>
+      <span class="chevron" id="chevron-lista-receitas-wrap">▼</span>
+    </div>
+    <div id="lista-receitas-wrap" class="section-body">
+      <div id="lista-receitas"></div>
+    </div>
+  </div>
+
+  <!-- DESPESAS FORM -->
+  <div class="card">
+    <h3>➖ Nova Despesa</h3>
+    <input id="d-desc" placeholder="Descrição">
+    <select id="d-cat">
+      <option value="Alimentação">Alimentação</option>
+      <option value="Transporte">Transporte</option>
+      <option value="Moradia">Moradia</option>
+      <option value="Lazer">Lazer</option>
+      <option value="Saúde">Saúde</option>
+      <option value="Outros">Outros</option>
+    </select>
+    <input id="d-val" type="number" placeholder="Valor" min="0">
+    <select id="d-moeda">
+      <option value="EUR">Euro (€)</option>
+      <option value="BRL">Real (R$)</option>
+    </select>
+    <button onclick="addDespesa()">Salvar Despesa</button>
+  </div>
+
+  <!-- DESPESAS LISTA -->
+  <div class="card">
+    <div class="section-header" onclick="toggleSection('lista-despesas-wrap')">
+      <h3>📉 Lista de Despesas <span id="count-despesas" class="count-badge"></span></h3>
+      <span class="chevron" id="chevron-lista-despesas-wrap">▼</span>
+    </div>
+    <div id="lista-despesas-wrap" class="section-body">
+      <div id="lista-despesas"></div>
+    </div>
+  </div>
+
+  <!-- DÍVIDAS FORM -->
+  <div class="card">
+    <h3>💳 Nova Dívida</h3>
+    <input id="div-desc" placeholder="Ex: Cartão Nubank">
+    <input id="div-valor" type="number" placeholder="Valor total" min="0">
+    <select id="div-moeda">
+      <option value="EUR">Euro (€)</option>
+      <option value="BRL">Real (R$)</option>
+    </select>
+    <button onclick="addDivida()">Salvar Dívida</button>
+  </div>
+
+  <!-- DÍVIDAS LISTA -->
+  <div class="card">
+    <div class="section-header" onclick="toggleSection('lista-dividas-wrap')">
+      <h3>📋 Suas Dívidas <span id="count-dividas" class="count-badge"></span></h3>
+      <span class="chevron" id="chevron-lista-dividas-wrap">▼</span>
+    </div>
+    <div id="lista-dividas-wrap" class="section-body">
+      <div id="lista-dividas"></div>
+    </div>
+  </div>
+
+  <!-- HISTÓRICO -->
+  <div class="card">
+    <div class="section-header" onclick="toggleSection('historico-wrap')">
+      <h3>📜 Histórico de alterações</h3>
+      <span class="chevron collapsed" id="chevron-historico-wrap">▶</span>
+    </div>
+    <div id="historico-wrap" class="section-body collapsed">
+      <div id="lista-historico"><p style="color:#94a3b8">Nenhuma alteração ainda</p></div>
+    </div>
+  </div>
+
 </div>
 
-<!-- Modal Tarefa -->
-<div class="modal-overlay" id="modal-tarefa">
-  <div class="modal">
-    <p class="modal-title" id="tarefa-modal-titulo">➕ Nova Tarefa</p>
-    <input id="t-titulo" placeholder="Título da tarefa">
-    <input id="t-desc" placeholder="Descrição (opcional)">
-    <select id="t-prioridade">
-      <option value="Normal">Normal</option>
-      <option value="Alta">Alta</option>
-      <option value="Urgente">Urgente</option>
-      <option value="Baixa">Baixa</option>
-    </select>
-    <select id="t-status">
-      <option value="Pendente">Pendente</option>
-      <option value="Em andamento">Em andamento</option>
-      <option value="Concluída">Concluída</option>
-    </select>
-    <input id="t-prazo" type="date">
-    <button onclick="salvarTarefa()" style="margin-bottom:8px">💾 Salvar</button>
-    <button class="btn-fechar" onclick="fecharModal('modal-tarefa')">✕ Cancelar</button>
-  </div>
-</div>
-
-<!-- ===== APP ===== -->
-<div id="app" style="display:none">
-
-  <!-- SIDEBAR -->
-  <div class="sidebar" id="sidebar">
-    <div class="sidebar-header">
-      <div class="sidebar-logo">🚀 <span>Meu Sistema</span></div>
-    </div>
-
-    <nav class="sidebar-nav">
-      <div class="nav-item active" id="nav-financeiro" onclick="trocarModulo('financeiro')">
-        <span class="nav-icon">💰</span><span class="nav-label">Financeiro</span>
-      </div>
-      <div class="nav-item" id="nav-clientes" onclick="trocarModulo('clientes')">
-        <span class="nav-icon">🏢</span><span class="nav-label">Clientes</span>
-      </div>
-      <div class="nav-item" id="nav-estoque" onclick="trocarModulo('estoque')">
-        <span class="nav-icon">📦</span><span class="nav-label">Estoque</span>
-      </div>
-      <div class="nav-item" id="nav-tarefas" onclick="trocarModulo('tarefas')">
-        <span class="nav-icon">📋</span><span class="nav-label">Tarefas</span>
-        <span class="nav-badge" id="badge-tarefas" style="display:none"></span>
-      </div>
-    </nav>
-
-    <div class="sidebar-footer">
-      <img id="user-avatar" src="" alt="" class="avatar">
-      <span id="user-name" class="user-name-text"></span>
-      <button class="btn-logout" onclick="fazerLogout()">Sair</button>
-    </div>
-  </div>
-
-  <!-- OVERLAY MOBILE -->
-  <div class="sidebar-overlay" id="sidebar-overlay" onclick="fecharSidebar()"></div>
-
-  <!-- MAIN -->
-  <div class="main-content" id="main-content">
-
-    <!-- TOPBAR MOBILE -->
-    <div class="topbar">
-      <button class="hamburger" onclick="toggleSidebar()">☰</button>
-      <span class="topbar-title" id="topbar-title">Financeiro</span>
-    </div>
-
-    <!-- ===== MÓDULO: FINANCEIRO ===== -->
-    <div id="modulo-financeiro" class="modulo">
-      <div class="page-header">
-        <h2>💰 Financeiro</h2>
-        <p class="page-sub" id="cambio">Carregando câmbio...</p>
-      </div>
-
-      <!-- Resumo Mensal -->
-      <div class="card">
-        <div class="section-header" onclick="toggleSection('resumo-mensal-wrap')">
-          <h3>📅 Resumo do mês <span id="label-mes-atual" class="count-badge"></span></h3>
-          <span class="chevron" id="chevron-resumo-mensal-wrap">▼</span>
-        </div>
-        <div id="resumo-mensal-wrap" class="section-body">
-          <div class="mensal-grid">
-            <div class="mensal-item receita"><div class="mensal-label">Receitas</div><div class="mensal-valor" id="mes-receitas">€ 0,00</div></div>
-            <div class="mensal-item despesa"><div class="mensal-label">Despesas</div><div class="mensal-valor" id="mes-despesas">€ 0,00</div></div>
-            <div class="mensal-item saldo"><div class="mensal-label">Saldo</div><div class="mensal-valor" id="mes-saldo">€ 0,00</div></div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Resumo Geral -->
-      <div class="card">
-        <h3>📊 Resumo geral</h3>
-        <p id="total-receitas">Receitas: €0</p>
-        <p id="total-despesas">Despesas: €0</p>
-        <p id="total-dividas">Dívidas: €0</p>
-        <hr>
-        <p id="saldo">Saldo: €0</p>
-        <p id="saldo-real">Saldo real (com dívidas): €0</p>
-      </div>
-
-      <!-- Filtro + Exportar -->
-      <div class="card filtro-card">
-        <div class="filtro-row">
-          <div class="filtro-group">
-            <label class="filtro-label">📅 Filtrar por mês</label>
-            <input type="month" id="filtro-mes" onchange="aplicarFiltro()">
-          </div>
-          <div class="filtro-btns">
-            <button class="btn-outline" onclick="limparFiltro()">✕ Todos</button>
-            <button class="btn-export" onclick="exportarCSV()">⬇️ CSV</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Gráfico -->
-      <div class="card">
-        <h3>📈 Ganhos vs Gastos</h3>
-        <canvas id="graficoFinanceiro"></canvas>
-      </div>
-
-      <!-- Nova Receita -->
-      <div class="card">
-        <h3>➕ Nova Receita</h3>
-        <input id="r-desc" placeholder="Descrição">
-        <select id="r-cat"><option value="Trabalho">Trabalho</option><option value="Freelance">Freelance</option><option value="Investimentos">Investimentos</option><option value="Outros">Outros</option></select>
-        <input id="r-val" type="number" placeholder="Valor" min="0">
-        <select id="r-moeda"><option value="EUR">Euro (€)</option><option value="BRL">Real (R$)</option></select>
-        <input id="r-data" type="date">
-        <button onclick="addReceita()">Salvar Receita</button>
-      </div>
-
-      <div class="card">
-        <div class="section-header" onclick="toggleSection('lista-receitas-wrap')">
-          <h3>📊 Receitas <span id="count-receitas" class="count-badge"></span></h3>
-          <span class="chevron" id="chevron-lista-receitas-wrap">▼</span>
-        </div>
-        <div id="lista-receitas-wrap" class="section-body"><div id="lista-receitas"></div></div>
-      </div>
-
-      <!-- Nova Despesa -->
-      <div class="card">
-        <h3>➖ Nova Despesa</h3>
-        <input id="d-desc" placeholder="Descrição">
-        <select id="d-cat"><option value="Alimentação">Alimentação</option><option value="Transporte">Transporte</option><option value="Moradia">Moradia</option><option value="Lazer">Lazer</option><option value="Saúde">Saúde</option><option value="Outros">Outros</option></select>
-        <input id="d-val" type="number" placeholder="Valor" min="0">
-        <select id="d-moeda"><option value="EUR">Euro (€)</option><option value="BRL">Real (R$)</option></select>
-        <input id="d-data" type="date">
-        <button onclick="addDespesa()">Salvar Despesa</button>
-      </div>
-
-      <div class="card">
-        <div class="section-header" onclick="toggleSection('lista-despesas-wrap')">
-          <h3>📉 Despesas <span id="count-despesas" class="count-badge"></span></h3>
-          <span class="chevron" id="chevron-lista-despesas-wrap">▼</span>
-        </div>
-        <div id="lista-despesas-wrap" class="section-body"><div id="lista-despesas"></div></div>
-      </div>
-
-      <!-- Nova Dívida -->
-      <div class="card">
-        <h3>💳 Nova Dívida</h3>
-        <input id="div-desc" placeholder="Ex: Cartão Nubank">
-        <input id="div-valor" type="number" placeholder="Valor total" min="0">
-        <select id="div-moeda"><option value="EUR">Euro (€)</option><option value="BRL">Real (R$)</option></select>
-        <div class="toggle-wrap">
-          <label class="toggle-label">
-            <input type="checkbox" id="div-recorrente" onchange="toggleDiaMes()">
-            <span>🔄 Recorrente (mensal)</span>
-          </label>
-          <div id="dia-mes-wrap" style="display:none;margin-top:8px">
-            <input id="div-dia-mes" type="number" placeholder="Dia do vencimento" min="1" max="31">
-          </div>
-        </div>
-        <button onclick="addDivida()" style="margin-top:10px">Salvar Dívida</button>
-      </div>
-
-      <div class="card">
-        <div class="section-header" onclick="toggleSection('lista-dividas-wrap')">
-          <h3>📋 Dívidas <span id="count-dividas" class="count-badge"></span></h3>
-          <span class="chevron" id="chevron-lista-dividas-wrap">▼</span>
-        </div>
-        <div id="lista-dividas-wrap" class="section-body"><div id="lista-dividas"></div></div>
-      </div>
-
-      <!-- Histórico -->
-      <div class="card">
-        <div class="section-header" onclick="toggleSection('historico-wrap')">
-          <h3>📜 Histórico</h3>
-          <span class="chevron collapsed" id="chevron-historico-wrap">▶</span>
-        </div>
-        <div id="historico-wrap" class="section-body collapsed"><div id="lista-historico"></div></div>
-      </div>
-    </div><!-- /financeiro -->
-
-    <!-- ===== MÓDULO: CLIENTES ===== -->
-    <div id="modulo-clientes" class="modulo" style="display:none">
-      <div class="page-header">
-        <h2>🏢 Clientes</h2>
-        <button class="btn-new" onclick="abrirModalCliente()">+ Novo Cliente</button>
-      </div>
-
-      <!-- Resumo -->
-      <div class="stats-grid">
-        <div class="stat-card"><div class="stat-label">Total</div><div class="stat-val" id="stat-clientes-total">0</div></div>
-        <div class="stat-card"><div class="stat-label">Ativos</div><div class="stat-val green" id="stat-clientes-ativos">0</div></div>
-        <div class="stat-card"><div class="stat-label">Prospects</div><div class="stat-val blue" id="stat-clientes-prospects">0</div></div>
-        <div class="stat-card"><div class="stat-label">Inativos</div><div class="stat-val muted" id="stat-clientes-inativos">0</div></div>
-      </div>
-
-      <!-- Filtro -->
-      <div class="card filtro-card">
-        <div class="filtro-row">
-          <input id="filtro-cliente" placeholder="🔍 Buscar cliente..." oninput="filtrarClientes()" style="margin:0;flex:1">
-          <select id="filtro-status-cliente" onchange="filtrarClientes()" style="margin:0;width:auto">
-            <option value="">Todos os status</option>
-            <option value="Ativo">Ativo</option>
-            <option value="Prospect">Prospect</option>
-            <option value="Inativo">Inativo</option>
-          </select>
-        </div>
-      </div>
-
-      <div id="lista-clientes"></div>
-    </div><!-- /clientes -->
-
-    <!-- ===== MÓDULO: ESTOQUE ===== -->
-    <div id="modulo-estoque" class="modulo" style="display:none">
-      <div class="page-header">
-        <h2>📦 Estoque</h2>
-        <button class="btn-new" onclick="abrirModalProduto()">+ Novo Produto</button>
-      </div>
-
-      <div class="stats-grid">
-        <div class="stat-card"><div class="stat-label">Produtos</div><div class="stat-val" id="stat-produtos-total">0</div></div>
-        <div class="stat-card"><div class="stat-label">Valor total</div><div class="stat-val green" id="stat-estoque-valor">€ 0</div></div>
-        <div class="stat-card"><div class="stat-label">Estoque baixo</div><div class="stat-val red" id="stat-estoque-baixo">0</div></div>
-      </div>
-
-      <div class="card filtro-card">
-        <div class="filtro-row">
-          <input id="filtro-produto" placeholder="🔍 Buscar produto..." oninput="filtrarProdutos()" style="margin:0;flex:1">
-          <select id="filtro-cat-produto" onchange="filtrarProdutos()" style="margin:0;width:auto">
-            <option value="">Todas as categorias</option>
-            <option value="Eletrônicos">Eletrônicos</option>
-            <option value="Vestuário">Vestuário</option>
-            <option value="Alimentos">Alimentos</option>
-            <option value="Ferramentas">Ferramentas</option>
-            <option value="Outros">Outros</option>
-          </select>
-        </div>
-      </div>
-
-      <div id="lista-estoque"></div>
-    </div><!-- /estoque -->
-
-    <!-- ===== MÓDULO: TAREFAS ===== -->
-    <div id="modulo-tarefas" class="modulo" style="display:none">
-      <div class="page-header">
-        <h2>📋 Tarefas</h2>
-        <button class="btn-new" onclick="abrirModalTarefa()">+ Nova Tarefa</button>
-      </div>
-
-      <div class="stats-grid">
-        <div class="stat-card"><div class="stat-label">Pendentes</div><div class="stat-val amber" id="stat-tarefas-pendentes">0</div></div>
-        <div class="stat-card"><div class="stat-label">Em andamento</div><div class="stat-val blue" id="stat-tarefas-andamento">0</div></div>
-        <div class="stat-card"><div class="stat-label">Concluídas</div><div class="stat-val green" id="stat-tarefas-concluidas">0</div></div>
-      </div>
-
-      <!-- Kanban -->
-      <div class="kanban">
-        <div class="kanban-col">
-          <div class="kanban-header pendente">⏳ Pendente</div>
-          <div id="kanban-pendente" class="kanban-items"></div>
-        </div>
-        <div class="kanban-col">
-          <div class="kanban-header andamento">🔄 Em andamento</div>
-          <div id="kanban-andamento" class="kanban-items"></div>
-        </div>
-        <div class="kanban-col">
-          <div class="kanban-header concluida">✅ Concluída</div>
-          <div id="kanban-concluida" class="kanban-items"></div>
-        </div>
-      </div>
-    </div><!-- /tarefas -->
-
-  </div><!-- /main-content -->
-</div><!-- /app -->
-
-<script src="chart.min.js" onerror="window.Chart=null"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script type="module" src="app.js"></script>
+
 </body>
 </html>
