@@ -6,70 +6,82 @@
   <title>Meu Financeiro 2.0</title>
   <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
 
-<!-- ===== TELA DE LOGIN ===== -->
-<div id="tela-login" class="login-overlay">
-  <div class="login-box">
-    <div class="login-logo">💰</div>
-    <h2 class="login-title">Meu Financeiro 2.0</h2>
-    <p class="login-sub">Controle seus gastos com inteligência</p>
-    <button class="btn-google" onclick="fazerLogin()">
-      <svg width="20" height="20" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
-      Entrar com Google
-    </button>
-  </div>
-</div>
-
-<!-- ===== MODAL PAGAMENTO ===== -->
+<!-- MODAL DE PAGAMENTO -->
 <div class="modal-overlay" id="modal-pagamento">
   <div class="modal">
     <p class="modal-title" id="modal-nome">Dívida</p>
-    <p class="modal-subtitle" id="modal-moeda-info"></p>
+    <p class="modal-subtitle" id="modal-moeda-info">Moeda original</p>
+
     <div class="ring-wrap">
-      <svg width="140" height="140" viewBox="0 0 140 140">
-        <circle class="ring-bg" cx="70" cy="70" r="56"/>
-        <circle class="ring-fill" id="ring-fill" cx="70" cy="70" r="56"
-          stroke-dasharray="352" stroke-dashoffset="352" stroke="#22c55e"/>
+      <svg width="150" height="150" viewBox="0 0 150 150">
+        <circle class="ring-bg" cx="75" cy="75" r="60"/>
+        <circle class="ring-fill" id="ring-fill" cx="75" cy="75" r="60"
+          stroke-dasharray="377" stroke-dashoffset="377" stroke="#22c55e"/>
       </svg>
       <div class="ring-text">
         <span class="ring-pct" id="ring-pct">0%</span>
         <span class="ring-label">pago</span>
       </div>
     </div>
+
     <div class="modal-info">
-      <div class="modal-info-item"><div class="info-label">Total</div><div class="info-value red" id="modal-total">€0</div></div>
-      <div class="modal-info-item"><div class="info-label">Pago</div><div class="info-value green" id="modal-pago">€0</div></div>
-      <div class="modal-info-item"><div class="info-label">Resta</div><div class="info-value blue" id="modal-resta">€0</div></div>
+      <div class="modal-info-item">
+        <div class="info-label">Total</div>
+        <div class="info-value red" id="modal-total">€0</div>
+      </div>
+      <div class="modal-info-item">
+        <div class="info-label">Pago</div>
+        <div class="info-value green" id="modal-pago">€0</div>
+      </div>
+      <div class="modal-info-item">
+        <div class="info-label">Resta</div>
+        <div class="info-value blue" id="modal-resta">€0</div>
+      </div>
     </div>
+
     <div class="modal-input-group">
       <input type="number" id="modal-valor-pagar" placeholder="Valor a pagar" min="0" step="0.01">
       <button onclick="confirmarPagamento()">💸 Pagar</button>
     </div>
+
     <button class="btn-fechar" onclick="fecharModal('modal-pagamento')">✕ Fechar</button>
   </div>
 </div>
 
-<!-- ===== MODAL CORRIGIR PAGAMENTO ===== -->
+<!-- MODAL CORRIGIR PAGAMENTO -->
 <div class="modal-overlay" id="modal-corrigir">
   <div class="modal">
     <p class="modal-title">🔧 Corrigir pagamento</p>
     <p class="modal-subtitle" id="corrigir-nome"></p>
-    <p id="corrigir-total" style="color:#94a3b8;font-size:13px;margin-bottom:4px"></p>
-    <p id="corrigir-atual" style="color:#f59e0b;font-size:13px;margin-bottom:16px"></p>
+
+    <div class="corrigir-info">
+      <p id="corrigir-total" style="color:#94a3b8; font-size:13px; margin-bottom:4px"></p>
+      <p id="corrigir-atual" style="color:#f59e0b; font-size:13px; margin-bottom:16px"></p>
+    </div>
+
     <label class="modal-label">Novo valor total pago</label>
     <input type="number" id="corrigir-valor" placeholder="Ex: 50" min="0" step="0.01">
-    <p style="font-size:12px;color:#64748b;margin-bottom:16px">💡 Informe o total correto já pago. Para zerar, coloque 0.</p>
-    <button onclick="salvarCorrecao()" style="margin-bottom:8px;background:linear-gradient(135deg,#f59e0b,#d97706)">✅ Confirmar correção</button>
+
+    <p style="font-size:12px; color:#64748b; margin-bottom:16px">
+      💡 Informe o valor correto total já pago (não o valor a adicionar). Para zerar, coloque 0.
+    </p>
+
+    <button onclick="salvarCorrecao()" style="margin-bottom:8px; background: linear-gradient(135deg,#f59e0b,#d97706)">
+      ✅ Confirmar correção
+    </button>
     <button class="btn-fechar" onclick="fecharModal('modal-corrigir')">✕ Cancelar</button>
   </div>
 </div>
 
-<!-- ===== MODAL EDIÇÃO ===== -->
+<!-- MODAL DE EDIÇÃO -->
 <div class="modal-overlay" id="modal-edicao">
   <div class="modal">
     <p class="modal-title">✏️ Editar lançamento</p>
-    <p class="modal-subtitle" id="edit-subtitle"></p>
+    <p class="modal-subtitle" id="edit-subtitle">Altere os campos desejados</p>
+
     <input id="edit-desc" placeholder="Descrição">
     <select id="edit-cat" style="display:none"></select>
     <input id="edit-val" type="number" placeholder="Valor" min="0" step="0.01">
@@ -77,25 +89,15 @@
       <option value="EUR">Euro (€)</option>
       <option value="BRL">Real (R$)</option>
     </select>
-    <input id="edit-data" type="date">
+
     <button onclick="salvarEdicao()" style="margin-bottom:8px">💾 Salvar alterações</button>
     <button class="btn-fechar" onclick="fecharModal('modal-edicao')">✕ Cancelar</button>
   </div>
 </div>
 
-<!-- ===== APP ===== -->
-<div id="app" style="display:none">
 <div class="container">
 
-  <!-- HEADER -->
-  <div class="app-header">
-    <h1>💰 Meu Financeiro 2.0</h1>
-    <div class="user-info">
-      <img id="user-avatar" src="" alt="" class="avatar">
-      <span id="user-name" class="user-name-text"></span>
-      <button class="btn-logout" onclick="fazerLogout()">Sair</button>
-    </div>
-  </div>
+  <h1>💰 Meu Financeiro 2.0</h1>
 
   <!-- CÂMBIO -->
   <div class="card highlight">
@@ -103,53 +105,15 @@
     <p id="cambio">Carregando...</p>
   </div>
 
-  <!-- RESUMO MENSAL -->
-  <div class="card card-mensal">
-    <div class="section-header" onclick="toggleSection('resumo-mensal-wrap')">
-      <h3>📅 Resumo do mês <span id="label-mes-atual" class="count-badge"></span></h3>
-      <span class="chevron" id="chevron-resumo-mensal-wrap">▼</span>
-    </div>
-    <div id="resumo-mensal-wrap" class="section-body">
-      <div class="mensal-grid">
-        <div class="mensal-item receita">
-          <div class="mensal-label">Receitas</div>
-          <div class="mensal-valor" id="mes-receitas">€ 0,00</div>
-        </div>
-        <div class="mensal-item despesa">
-          <div class="mensal-label">Despesas</div>
-          <div class="mensal-valor" id="mes-despesas">€ 0,00</div>
-        </div>
-        <div class="mensal-item saldo">
-          <div class="mensal-label">Saldo</div>
-          <div class="mensal-valor" id="mes-saldo">€ 0,00</div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- RESUMO GERAL -->
+  <!-- RESUMO -->
   <div class="card">
-    <h3>📊 Resumo geral</h3>
+    <h3>📊 Resumo financeiro</h3>
     <p id="total-receitas">Receitas: €0</p>
     <p id="total-despesas">Despesas: €0</p>
     <p id="total-dividas">Dívidas: €0</p>
     <hr>
     <p id="saldo">Saldo: €0</p>
     <p id="saldo-real">Saldo real (com dívidas): €0</p>
-  </div>
-
-  <!-- FILTRO + EXPORTAR -->
-  <div class="card filtro-card">
-    <div class="filtro-row">
-      <div class="filtro-group">
-        <label class="filtro-label">📅 Filtrar por mês</label>
-        <input type="month" id="filtro-mes" onchange="aplicarFiltro()">
-      </div>
-      <div class="filtro-btns">
-        <button class="btn-filtro-limpar" onclick="limparFiltro()">✕ Todos</button>
-        <button class="btn-exportar" onclick="exportarCSV()">⬇️ CSV</button>
-      </div>
-    </div>
   </div>
 
   <!-- GRÁFICO -->
@@ -173,7 +137,6 @@
       <option value="EUR">Euro (€)</option>
       <option value="BRL">Real (R$)</option>
     </select>
-    <input id="r-data" type="date">
     <button onclick="addReceita()">Salvar Receita</button>
   </div>
 
@@ -205,7 +168,6 @@
       <option value="EUR">Euro (€)</option>
       <option value="BRL">Real (R$)</option>
     </select>
-    <input id="d-data" type="date">
     <button onclick="addDespesa()">Salvar Despesa</button>
   </div>
 
@@ -229,16 +191,7 @@
       <option value="EUR">Euro (€)</option>
       <option value="BRL">Real (R$)</option>
     </select>
-    <div class="recorrente-toggle">
-      <label class="toggle-label">
-        <input type="checkbox" id="div-recorrente" onchange="toggleDiaMes()">
-        <span class="toggle-text">🔄 Dívida recorrente (mensal)</span>
-      </label>
-      <div id="dia-mes-wrap" style="display:none;margin-top:8px">
-        <input id="div-dia-mes" type="number" placeholder="Dia do vencimento (ex: 10)" min="1" max="31">
-      </div>
-    </div>
-    <button onclick="addDivida()" style="margin-top:10px">Salvar Dívida</button>
+    <button onclick="addDivida()">Salvar Dívida</button>
   </div>
 
   <!-- DÍVIDAS LISTA -->
@@ -264,9 +217,9 @@
   </div>
 
 </div>
-</div><!-- /#app -->
 
-<script src="https://unpkg.com/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script type="module" src="app.js"></script>
+
 </body>
 </html>
