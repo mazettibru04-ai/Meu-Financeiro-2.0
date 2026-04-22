@@ -51,6 +51,31 @@
   </div>
 </div>
 
+<!-- MODAL CORRIGIR PAGAMENTO -->
+<div class="modal-overlay" id="modal-corrigir">
+  <div class="modal">
+    <p class="modal-title">🔧 Corrigir pagamento</p>
+    <p class="modal-subtitle" id="corrigir-nome"></p>
+
+    <div class="corrigir-info">
+      <p id="corrigir-total" style="color:#94a3b8; font-size:13px; margin-bottom:4px"></p>
+      <p id="corrigir-atual" style="color:#f59e0b; font-size:13px; margin-bottom:16px"></p>
+    </div>
+
+    <label class="modal-label">Novo valor total pago</label>
+    <input type="number" id="corrigir-valor" placeholder="Ex: 50" min="0" step="0.01">
+
+    <p style="font-size:12px; color:#64748b; margin-bottom:16px">
+      💡 Informe o valor correto total já pago (não o valor a adicionar). Para zerar, coloque 0.
+    </p>
+
+    <button onclick="salvarCorrecao()" style="margin-bottom:8px; background: linear-gradient(135deg,#f59e0b,#d97706)">
+      ✅ Confirmar correção
+    </button>
+    <button class="btn-fechar" onclick="fecharModal('modal-corrigir')">✕ Cancelar</button>
+  </div>
+</div>
+
 <!-- MODAL DE EDIÇÃO -->
 <div class="modal-overlay" id="modal-edicao">
   <div class="modal">
@@ -58,11 +83,8 @@
     <p class="modal-subtitle" id="edit-subtitle">Altere os campos desejados</p>
 
     <input id="edit-desc" placeholder="Descrição">
-
     <select id="edit-cat" style="display:none"></select>
-
     <input id="edit-val" type="number" placeholder="Valor" min="0" step="0.01">
-
     <select id="edit-moeda">
       <option value="EUR">Euro (€)</option>
       <option value="BRL">Real (R$)</option>
@@ -94,7 +116,7 @@
     <p id="saldo-real">Saldo real (com dívidas): €0</p>
   </div>
 
-  <!-- GRÁFICO GERAL -->
+  <!-- GRÁFICO -->
   <div class="card">
     <h3>📈 Ganhos vs Gastos</h3>
     <canvas id="graficoFinanceiro"></canvas>
