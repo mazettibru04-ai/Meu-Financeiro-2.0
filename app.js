@@ -7,50 +7,41 @@ import {
   doc,
   onSnapshot,
   orderBy,
-  query
+  query,
+  limit
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 // =====================
-// VARIÁVEIS
+// VARIÁVEIS GLOBAIS
 // =====================
 let taxa = 0;
 let totalReceitas = 0;
 let totalDespesas = 0;
-let totalDividas = 0;
-let historico = [];
+let totalDividas  = 0;
 
-// Estado do modal
-let modalDividaId = null;
+// Modal pagamento
+let modalDividaId   = null;
 let modalDividaData = null;
 
-// =====================
-// GRÁFICOS
-// =====================
-let chart;
-let chartReceitas;
-let chartDespesas;
+// Modal edição
+let editId      = null;
+let editColecao = null;
 
-// =====================
-// CORES
-// =====================
-const coresCategoria = {
-  Alimentação: "#ef4444",
-  Transporte: "#3b82f6",
-  Moradia: "#f97316",
-  Saúde: "#10b981",
-  Lazer: "#a855f7",
-  Outros: "#94a3b8"
-};
+// Gráfico
+let chart;
 
 // =====================
 // FORMATAÇÃO
 // =====================
 function fmt(valor) {
-  return valor.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return Number(valor).toLocaleString("pt-BR", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  });
 }
 
 // =====================
-// CONVERSÃO
+// CONVERSÃO EUR
 // =====================
 function eur(v, m) {
   if (m === "EUR") return Number(v);
@@ -59,54 +50,42 @@ function eur(v, m) {
 }
 
 // =====================
-// AGRUPAR CATEGORIAS
+// CÂMBIO
 // =====================
-function agruparPorCategoria(lista) {
-  const dados = {};
-  lista.forEach(item => {
-    const cat = item.categoria || "Outros";
-    dados[cat] = (dados[cat] || 0) + eur(item.val, item.moeda);
-  });
-  return dados;
+async function pegarCambio() {
+  try {
+    const res  = await fetch("https://api.exchangerate-api.com/v4/latest/EUR");
+    const data = await res.json();
+    taxa = data?.rates?.BRL || 0;
+    document.getElementById("cambio").innerText = `€1 = R$ ${fmt(taxa)}`;
+  } catch {
+    document.getElementById("cambio").innerText = "Erro ao carregar câmbio";
+  }
 }
 
 // =====================
-// GRÁFICOS
+// RESUMO + GRÁFICO
 // =====================
-function atualizarGraficoDespesas(lista) {
-  const ctx = document.getElementById("graficoDespesas");
-  if (!ctx) return;
-  const dados = agruparPorCategoria(lista);
-  const labels = Object.keys(dados);
-  const valores = Object.values(dados);
-  const cores = labels.map(c => coresCategoria[c] || "#999");
-  if (chartDespesas) chartDespesas.destroy();
-  chartDespesas = new Chart(ctx, {
-    type: "doughnut",
-    data: { labels, datasets: [{ data: valores, backgroundColor: cores }] },
-    options: { plugins: { legend: { labels: { color: "#fff" } } } }
-  });
-}
+function atualizarResumo() {
+  const saldo     = totalReceitas - totalDespesas;
+  const saldoReal = saldo - totalDividas;
 
-function atualizarGraficoReceitas(lista) {
-  const ctx = document.getElementById("graficoReceitas");
-  if (!ctx) return;
-  const dados = agruparPorCategoria(lista);
-  const labels = Object.keys(dados);
-  const valores = Object.values(dados);
-  if (chartReceitas) chartReceitas.destroy();
-  chartReceitas = new Chart(ctx, {
-    type: "doughnut",
-    data: { labels, datasets: [{ data: valores, backgroundColor: ["#22c55e", "#3b82f6", "#a855f7", "#94a3b8"] }] },
-    options: { plugins: { legend: { labels: { color: "#fff" } } } }
-  });
+  document.getElementById("total-receitas").innerText = `Receitas: € ${fmt(totalReceitas)}`;
+  document.getElementById("total-despesas").innerText = `Despesas: € ${fmt(totalDespesas)}`;
+  document.getElementById("total-dividas").innerText  = `Dívidas: € ${fmt(totalDividas)}`;
+  document.getElementById("saldo").innerText          = `Saldo: € ${fmt(saldo)}`;
+  document.getElementById("saldo-real").innerText     = `Saldo real (com dívidas): € ${fmt(saldoReal)}`;
+
+  atualizarGrafico();
 }
 
 function atualizarGrafico() {
   const ctx = document.getElementById("graficoFinanceiro");
   if (!ctx) return;
   if (chart) chart.destroy();
+
   const saldo = totalReceitas - totalDespesas;
+
   chart = new Chart(ctx, {
     type: "bar",
     data: {
@@ -129,60 +108,60 @@ function atualizarGrafico() {
 }
 
 // =====================
-// CÂMBIO
+// HISTÓRICO — FIRESTORE
 // =====================
-async function pegarCambio() {
+async function registrarHistorico(acao, desc, valor, moeda) {
   try {
-    const res = await fetch("https://api.exchangerate-api.com/v4/latest/EUR");
-    const data = await res.json();
-    taxa = data?.rates?.BRL || 0;
-    document.getElementById("cambio").innerText = `€1 = R$ ${fmt(taxa)}`;
-  } catch {
-    document.getElementById("cambio").innerText = "Erro ao carregar câmbio";
+    await addDoc(collection(db, "historico"), {
+      acao,
+      desc,
+      valor: String(valor),
+      moeda,
+      criadoEm: Date.now()
+    });
+  } catch (e) {
+    console.error("Erro ao gravar histórico:", e);
   }
 }
 
-// =====================
-// RESUMO
-// =====================
-function atualizarResumo() {
-  const saldo = totalReceitas - totalDespesas;
-  const saldoReal = saldo - totalDividas;
+function iniciarStreamHistorico() {
+  const q = query(collection(db, "historico"), orderBy("criadoEm", "desc"), limit(30));
+  onSnapshot(q, (snap) => {
+    if (snap.empty) {
+      document.getElementById("lista-historico").innerHTML =
+        "<p style='color:#94a3b8'>Nenhuma alteração ainda</p>";
+      return;
+    }
 
-  document.getElementById("total-receitas").innerText = `Receitas: € ${fmt(totalReceitas)}`;
-  document.getElementById("total-despesas").innerText = `Despesas: € ${fmt(totalDespesas)}`;
-  document.getElementById("total-dividas").innerText = `Dívidas: € ${fmt(totalDividas)}`;
-  document.getElementById("saldo").innerText = `Saldo: € ${fmt(saldo)}`;
-  document.getElementById("saldo-real").innerText = `Saldo real (com dívidas): € ${fmt(saldoReal)}`;
+    let html = "";
+    snap.forEach((i) => {
+      const h = i.data();
+      const hora = new Date(h.criadoEm).toLocaleString("pt-BR");
+      const icone = h.acao.split(" ")[0];
+      const texto = h.acao.replace(/^\S+\s/, "");
 
-  atualizarGrafico();
+      html += `
+        <div class="historico-item">
+          <div class="historico-icon">${icone}</div>
+          <div class="historico-info">
+            <div class="historico-acao">${texto} — ${h.desc}</div>
+            <div class="historico-detalhe">${h.moeda !== "-" ? `${h.moeda} ${h.valor}` : ""} · ${hora}</div>
+          </div>
+        </div>
+      `;
+    });
+
+    document.getElementById("lista-historico").innerHTML = html;
+  });
 }
 
 // =====================
-// HISTÓRICO
-// =====================
-function registrarHistorico(acao, desc, valor, moeda) {
-  const agora = new Date().toLocaleString("pt-BR");
-  historico.unshift({ acao, desc, valor, moeda, hora: agora });
-
-  const html = historico.slice(0, 20).map(h => `
-    <div class="card">
-      <small>${h.hora}</small>
-      <p><strong>${h.acao}</strong> — ${h.desc}</p>
-      <small>${h.moeda} ${h.valor}</small>
-    </div>
-  `).join("");
-
-  document.getElementById("lista-historico").innerHTML = html;
-}
-
-// =====================
-// PROGRESS BAR (inline no card)
+// PROGRESS BAR
 // =====================
 function renderProgress(pago, total) {
-  const pct = Math.min(100, total > 0 ? Math.round((pago / total) * 100) : 0);
+  const pct    = Math.min(100, total > 0 ? Math.round((pago / total) * 100) : 0);
   const classe = pct >= 100 ? "done" : pct >= 50 ? "mid" : "low";
-  const label = pct >= 100 ? "✅ Pago!" : `${pct}% pago`;
+  const label  = pct >= 100 ? "✅ Pago!" : `${pct}% pago`;
 
   return `
     <div class="progress-wrap">
@@ -191,71 +170,61 @@ function renderProgress(pago, total) {
         <span class="pct ${classe}">${label}</span>
       </div>
       <div class="progress-bar-bg">
-        <div class="progress-bar-fill ${classe}" style="width: ${pct}%"></div>
+        <div class="progress-bar-fill ${classe}" style="width:${pct}%"></div>
       </div>
     </div>
   `;
 }
 
 // =====================
-// MODAL — ABRIR
+// COLLAPSIBLE SECTIONS
+// =====================
+window.toggleSection = function (id) {
+  const body    = document.getElementById(id);
+  const chevron = document.getElementById("chevron-" + id);
+  if (!body) return;
+
+  body.classList.toggle("collapsed");
+  chevron.classList.toggle("collapsed");
+};
+
+// =====================
+// MODAL PAGAMENTO — ABRIR
 // =====================
 window.abrirModalPagamento = function (id, data) {
-  modalDividaId = id;
+  modalDividaId   = id;
   modalDividaData = data;
 
   const totalEUR = eur(data.valorOriginal, data.moeda);
   const pagoEUR  = eur(data.pago || 0, data.moeda);
   const restaEUR = Math.max(0, totalEUR - pagoEUR);
-  const pct = Math.min(100, totalEUR > 0 ? Math.round((pagoEUR / totalEUR) * 100) : 0);
+  const pct      = Math.min(100, totalEUR > 0 ? Math.round((pagoEUR / totalEUR) * 100) : 0);
 
-  // Textos
-  document.getElementById("modal-nome").textContent = data.desc;
-  document.getElementById("modal-moeda-info").textContent =
-    `Moeda original: ${data.moeda} ${data.valorOriginal}`;
-  document.getElementById("modal-total").textContent = `€ ${fmt(totalEUR)}`;
-  document.getElementById("modal-pago").textContent  = `€ ${fmt(pagoEUR)}`;
-  document.getElementById("modal-resta").textContent = `€ ${fmt(restaEUR)}`;
-  document.getElementById("modal-valor-pagar").value = "";
+  document.getElementById("modal-nome").textContent        = data.desc;
+  document.getElementById("modal-moeda-info").textContent  = `Moeda original: ${data.moeda} ${data.valorOriginal}`;
+  document.getElementById("modal-total").textContent       = `€ ${fmt(totalEUR)}`;
+  document.getElementById("modal-pago").textContent        = `€ ${fmt(pagoEUR)}`;
+  document.getElementById("modal-resta").textContent       = `€ ${fmt(restaEUR)}`;
+  document.getElementById("modal-valor-pagar").value       = "";
 
-  // Anel
-  const circumference = 2 * Math.PI * 60; // r=60 → 377
-  const offset = circumference - (pct / 100) * circumference;
-  const ringFill = document.getElementById("ring-fill");
-  const ringPct  = document.getElementById("ring-pct");
+  const circumference = 2 * Math.PI * 60;
+  const offset        = circumference - (pct / 100) * circumference;
+  const ringFill      = document.getElementById("ring-fill");
+  const ringPct       = document.getElementById("ring-pct");
+  const cor           = pct >= 100 ? "#22c55e" : pct >= 50 ? "#f59e0b" : "#ef4444";
 
-  // Cor do anel
-  const cor = pct >= 100 ? "#22c55e" : pct >= 50 ? "#f59e0b" : "#ef4444";
-  ringFill.style.stroke = cor;
-  ringPct.style.color   = cor;
-
-  // Pequeno delay para a animação rodar ao abrir
+  ringFill.style.stroke         = cor;
+  ringPct.style.color           = cor;
   ringFill.style.strokeDashoffset = circumference;
-  setTimeout(() => {
-    ringFill.style.strokeDashoffset = offset;
-  }, 80);
+
+  setTimeout(() => { ringFill.style.strokeDashoffset = offset; }, 80);
 
   ringPct.textContent = `${pct}%`;
-
   document.getElementById("modal-pagamento").classList.add("active");
 };
 
 // =====================
-// MODAL — FECHAR
-// =====================
-window.fecharModal = function () {
-  document.getElementById("modal-pagamento").classList.remove("active");
-  modalDividaId = null;
-  modalDividaData = null;
-};
-
-// Fechar clicando fora
-document.getElementById("modal-pagamento").addEventListener("click", (e) => {
-  if (e.target === e.currentTarget) fecharModal();
-});
-
-// =====================
-// CONFIRMAR PAGAMENTO
+// MODAL PAGAMENTO — CONFIRMAR
 // =====================
 window.confirmarPagamento = async function () {
   if (!modalDividaId || !modalDividaData) return;
@@ -268,21 +237,108 @@ window.confirmarPagamento = async function () {
   const total     = Number(modalDividaData.valorOriginal);
 
   if (novoPago > total) {
-    return alert(`O valor excede o total da dívida. Máximo a pagar: ${modalDividaData.moeda} ${fmt(total - pagoAtual)}`);
+    return alert(`Valor excede o total. Máximo a pagar: ${modalDividaData.moeda} ${fmt(total - pagoAtual)}`);
   }
 
   await updateDoc(doc(db, "dividas", modalDividaId), { pago: novoPago });
+  await registrarHistorico("💸 Pagamento realizado", modalDividaData.desc, valorPagar, modalDividaData.moeda);
 
-  registrarHistorico(
-    "💸 Pagamento realizado",
-    modalDividaData.desc,
-    valorPagar,
-    modalDividaData.moeda
+  // Atualiza modal sem fechar
+  abrirModalPagamento(modalDividaId, { ...modalDividaData, pago: novoPago });
+};
+
+// =====================
+// MODAL EDIÇÃO — ABRIR
+// =====================
+window.abrirModalEdicao = function (colecao, id, dataJson) {
+  const data = JSON.parse(dataJson);
+  editId      = id;
+  editColecao = colecao;
+
+  // Subtítulo
+  const nomes = { receitas: "Receita", despesas: "Despesa" };
+  document.getElementById("edit-subtitle").textContent =
+    `Editando: ${nomes[colecao] || colecao}`;
+
+  // Preencher campos
+  document.getElementById("edit-desc").value  = data.desc;
+  document.getElementById("edit-val").value   = data.val;
+  document.getElementById("edit-moeda").value = data.moeda;
+
+  // Categorias
+  const catSelect = document.getElementById("edit-cat");
+  catSelect.innerHTML = "";
+
+  const opcoesReceita  = ["Trabalho","Freelance","Investimentos","Outros"];
+  const opcoesDespesa  = ["Alimentação","Transporte","Moradia","Lazer","Saúde","Outros"];
+  const opcoes         = colecao === "receitas" ? opcoesReceita : opcoesDespesa;
+
+  opcoes.forEach(o => {
+    const opt = document.createElement("option");
+    opt.value = o;
+    opt.text  = o;
+    if (o === data.categoria) opt.selected = true;
+    catSelect.appendChild(opt);
+  });
+
+  catSelect.style.display = "block";
+
+  document.getElementById("modal-edicao").classList.add("active");
+};
+
+// =====================
+// MODAL EDIÇÃO — SALVAR
+// =====================
+window.salvarEdicao = async function () {
+  if (!editId || !editColecao) return;
+
+  const desc  = document.getElementById("edit-desc").value.trim();
+  const val   = Number(document.getElementById("edit-val").value);
+  const moeda = document.getElementById("edit-moeda").value;
+  const cat   = document.getElementById("edit-cat").value;
+
+  if (!desc || val <= 0) return alert("Preencha todos os campos corretamente");
+
+  const confirmar = confirm(`Confirmar alteração de "${desc}"?`);
+  if (!confirmar) return;
+
+  await updateDoc(doc(db, editColecao, editId), {
+    desc, val, moeda, categoria: cat
+  });
+
+  await registrarHistorico("✏️ Lançamento editado", desc, val, moeda);
+
+  fecharModal("modal-edicao");
+};
+
+// =====================
+// FECHAR MODAL (genérico)
+// =====================
+window.fecharModal = function (id) {
+  document.getElementById(id).classList.remove("active");
+  if (id === "modal-pagamento") { modalDividaId = null; modalDividaData = null; }
+  if (id === "modal-edicao")    { editId = null; editColecao = null; }
+};
+
+// Fechar clicando fora
+["modal-pagamento", "modal-edicao"].forEach(id => {
+  document.getElementById(id)?.addEventListener("click", (e) => {
+    if (e.target === e.currentTarget) fecharModal(id);
+  });
+});
+
+// =====================
+// DELETAR (com confirmação)
+// =====================
+window.deletarItem = async function (colecao, id, desc) {
+  const confirmar = confirm(`Tem certeza que deseja remover "${desc}"?\n\nEssa ação não pode ser desfeita.`);
+  if (!confirmar) return;
+
+  await deleteDoc(doc(db, colecao, id));
+  await registrarHistorico(
+    `🗑️ ${colecao.charAt(0).toUpperCase() + colecao.slice(1, -1)} removido`,
+    desc, "-", "-"
   );
-
-  // Atualiza modal com novos valores
-  const novoData = { ...modalDividaData, pago: novoPago };
-  abrirModalPagamento(modalDividaId, novoData);
 };
 
 // =====================
@@ -297,7 +353,7 @@ window.addReceita = async function () {
   if (!desc || val <= 0) return alert("Preencha corretamente");
 
   await addDoc(collection(db, "receitas"), { desc, categoria: cat, val, moeda, criadoEm: Date.now() });
-  registrarHistorico("➕ Receita adicionada", desc, val, moeda);
+  await registrarHistorico("➕ Receita adicionada", desc, val, moeda);
 
   document.getElementById("r-desc").value = "";
   document.getElementById("r-val").value  = "";
@@ -315,7 +371,7 @@ window.addDespesa = async function () {
   if (!desc || val <= 0) return alert("Preencha corretamente");
 
   await addDoc(collection(db, "despesas"), { desc, categoria: cat, val, moeda, criadoEm: Date.now() });
-  registrarHistorico("➖ Despesa adicionada", desc, val, moeda);
+  await registrarHistorico("➖ Despesa adicionada", desc, val, moeda);
 
   document.getElementById("d-desc").value = "";
   document.getElementById("d-val").value  = "";
@@ -334,42 +390,27 @@ window.addDivida = async function () {
   await addDoc(collection(db, "dividas"), {
     desc, valorOriginal: valor, moeda, pago: 0, criadoEm: Date.now()
   });
-  registrarHistorico("💳 Dívida adicionada", desc, valor, moeda);
+  await registrarHistorico("💳 Dívida adicionada", desc, valor, moeda);
 
-  document.getElementById("div-desc").value   = "";
-  document.getElementById("div-valor").value  = "";
+  document.getElementById("div-desc").value  = "";
+  document.getElementById("div-valor").value = "";
 };
 
 // =====================
-// DELETAR
+// STREAM RECEITAS
 // =====================
-window.deletarItem = async function (colecao, id, desc) {
-  if (!confirm(`Remover "${desc}"?`)) return;
-  await deleteDoc(doc(db, colecao, id));
-  registrarHistorico(
-    `🗑️ ${colecao.charAt(0).toUpperCase() + colecao.slice(1)} removido`,
-    desc, "-", "-"
-  );
-};
-
-// =====================
-// INICIALIZAR
-// =====================
-async function inicializar() {
-  await pegarCambio();
-
-  // RECEITAS
-  const qReceitas = query(collection(db, "receitas"), orderBy("criadoEm", "desc"));
-  onSnapshot(qReceitas, (snap) => {
+function iniciarStreamReceitas() {
+  const q = query(collection(db, "receitas"), orderBy("criadoEm", "desc"));
+  onSnapshot(q, (snap) => {
     totalReceitas = 0;
-    let lista = [];
-    let html  = "";
+    let html = "";
 
     snap.forEach((i) => {
       const r = i.data();
       const v = eur(r.val, r.moeda);
       totalReceitas += v;
-      lista.push(r);
+
+      const dataJson = JSON.stringify(r).replace(/"/g, "&quot;");
 
       html += `
         <div class="card">
@@ -378,30 +419,37 @@ async function inicializar() {
           <p>${r.moeda} ${r.val}</p>
           <small>€ ${fmt(v)}</small>
           <div class="actions">
-            <button onclick="deletarItem('receitas','${i.id}','${r.desc}')">🗑️ Remover</button>
+            <button class="btn-editar" onclick='abrirModalEdicao("receitas","${i.id}","${dataJson}")'>✏️ Editar</button>
+            <button class="btn-remover" onclick="deletarItem('receitas','${i.id}','${r.desc}')">🗑️ Remover</button>
           </div>
         </div>
       `;
     });
 
+    const count = snap.size;
+    document.getElementById("count-receitas").textContent = count > 0 ? count : "";
     document.getElementById("lista-receitas").innerHTML =
       html || "<p style='color:#94a3b8'>Nenhuma receita</p>";
-    atualizarResumo();
-    atualizarGraficoReceitas(lista);
-  });
 
-  // DESPESAS
-  const qDespesas = query(collection(db, "despesas"), orderBy("criadoEm", "desc"));
-  onSnapshot(qDespesas, (snap) => {
+    atualizarResumo();
+  });
+}
+
+// =====================
+// STREAM DESPESAS
+// =====================
+function iniciarStreamDespesas() {
+  const q = query(collection(db, "despesas"), orderBy("criadoEm", "desc"));
+  onSnapshot(q, (snap) => {
     totalDespesas = 0;
-    let lista = [];
-    let html  = "";
+    let html = "";
 
     snap.forEach((i) => {
       const d = i.data();
       const v = eur(d.val, d.moeda);
       totalDespesas += v;
-      lista.push(d);
+
+      const dataJson = JSON.stringify(d).replace(/"/g, "&quot;");
 
       html += `
         <div class="card">
@@ -410,56 +458,76 @@ async function inicializar() {
           <p>${d.moeda} ${d.val}</p>
           <small>€ ${fmt(v)}</small>
           <div class="actions">
-            <button onclick="deletarItem('despesas','${i.id}','${d.desc}')">🗑️ Remover</button>
+            <button class="btn-editar" onclick='abrirModalEdicao("despesas","${i.id}","${dataJson}")'>✏️ Editar</button>
+            <button class="btn-remover" onclick="deletarItem('despesas','${i.id}','${d.desc}')">🗑️ Remover</button>
           </div>
         </div>
       `;
     });
 
+    const count = snap.size;
+    document.getElementById("count-despesas").textContent = count > 0 ? count : "";
     document.getElementById("lista-despesas").innerHTML =
       html || "<p style='color:#94a3b8'>Nenhuma despesa</p>";
-    atualizarResumo();
-    atualizarGraficoDespesas(lista);
-  });
 
-  // DÍVIDAS
-  const qDividas = query(collection(db, "dividas"), orderBy("criadoEm", "desc"));
-  onSnapshot(qDividas, (snap) => {
+    atualizarResumo();
+  });
+}
+
+// =====================
+// STREAM DÍVIDAS
+// =====================
+function iniciarStreamDividas() {
+  const q = query(collection(db, "dividas"), orderBy("criadoEm", "desc"));
+  onSnapshot(q, (snap) => {
     totalDividas = 0;
     let html = "";
 
     snap.forEach((i) => {
-      const d = i.data();
+      const d        = i.data();
       const totalEUR = eur(d.valorOriginal, d.moeda);
       const pagoEUR  = eur(d.pago || 0, d.moeda);
       const restante = Math.max(0, totalEUR - pagoEUR);
       const quitada  = pagoEUR >= totalEUR && totalEUR > 0;
 
-      // Só conta no total as não quitadas
       if (!quitada) totalDividas += restante;
 
-      const dataJson = JSON.stringify({ ...d }).replace(/'/g, "\\'");
-
       html += `
-        <div class="card ${quitada ? 'pago-total' : ''}">
-          <strong>${d.desc} ${quitada ? '<span class="badge-pago">✅ Quitada</span>' : ''}</strong>
+        <div class="card ${quitada ? "pago-total" : ""}">
+          <strong>${d.desc}${quitada ? ' <span class="badge-pago">✅ Quitada</span>' : ""}</strong>
           <p>${d.moeda} ${d.valorOriginal}</p>
           <small>€ ${fmt(totalEUR)} total · Resta € ${fmt(restante)}</small>
 
           ${renderProgress(pagoEUR, totalEUR)}
 
           <div class="actions">
-            ${!quitada ? `<button class="btn-pagar" onclick='abrirModalPagamento("${i.id}", ${JSON.stringify(d)})'>💸 Pagar</button>` : ""}
-            <button onclick="deletarItem('dividas','${i.id}','${d.desc}')">🗑️ Remover</button>
+            ${!quitada
+              ? `<button class="btn-pagar" onclick='abrirModalPagamento("${i.id}",${JSON.stringify(d)})'>💸 Pagar</button>`
+              : ""}
+            <button class="btn-remover" onclick="deletarItem('dividas','${i.id}','${d.desc}')">🗑️ Remover</button>
           </div>
         </div>
       `;
     });
 
+    const count = snap.size;
+    document.getElementById("count-dividas").textContent = count > 0 ? count : "";
     document.getElementById("lista-dividas").innerHTML =
       html || "<p style='color:#94a3b8'>Nenhuma dívida</p>";
+
     atualizarResumo();
   });
+}
+
+// =====================
+// INICIALIZAR
+// =====================
+async function inicializar() {
+  await pegarCambio();
+  iniciarStreamReceitas();
+  iniciarStreamDespesas();
+  iniciarStreamDividas();
+  iniciarStreamHistorico();
 }
 
 inicializar();

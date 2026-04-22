@@ -15,14 +15,11 @@
     <p class="modal-title" id="modal-nome">Dívida</p>
     <p class="modal-subtitle" id="modal-moeda-info">Moeda original</p>
 
-    <!-- ANEL DE PROGRESSO -->
     <div class="ring-wrap">
       <svg width="150" height="150" viewBox="0 0 150 150">
         <circle class="ring-bg" cx="75" cy="75" r="60"/>
         <circle class="ring-fill" id="ring-fill" cx="75" cy="75" r="60"
-          stroke-dasharray="377"
-          stroke-dashoffset="377"
-          stroke="#22c55e"/>
+          stroke-dasharray="377" stroke-dashoffset="377" stroke="#22c55e"/>
       </svg>
       <div class="ring-text">
         <span class="ring-pct" id="ring-pct">0%</span>
@@ -30,7 +27,6 @@
       </div>
     </div>
 
-    <!-- INFO -->
     <div class="modal-info">
       <div class="modal-info-item">
         <div class="info-label">Total</div>
@@ -46,13 +42,34 @@
       </div>
     </div>
 
-    <!-- INPUT PAGAMENTO -->
     <div class="modal-input-group">
       <input type="number" id="modal-valor-pagar" placeholder="Valor a pagar" min="0" step="0.01">
       <button onclick="confirmarPagamento()">💸 Pagar</button>
     </div>
 
-    <button class="btn-fechar" onclick="fecharModal()">✕ Fechar</button>
+    <button class="btn-fechar" onclick="fecharModal('modal-pagamento')">✕ Fechar</button>
+  </div>
+</div>
+
+<!-- MODAL DE EDIÇÃO -->
+<div class="modal-overlay" id="modal-edicao">
+  <div class="modal">
+    <p class="modal-title">✏️ Editar lançamento</p>
+    <p class="modal-subtitle" id="edit-subtitle">Altere os campos desejados</p>
+
+    <input id="edit-desc" placeholder="Descrição">
+
+    <select id="edit-cat" style="display:none"></select>
+
+    <input id="edit-val" type="number" placeholder="Valor" min="0" step="0.01">
+
+    <select id="edit-moeda">
+      <option value="EUR">Euro (€)</option>
+      <option value="BRL">Real (R$)</option>
+    </select>
+
+    <button onclick="salvarEdicao()" style="margin-bottom:8px">💾 Salvar alterações</button>
+    <button class="btn-fechar" onclick="fecharModal('modal-edicao')">✕ Cancelar</button>
   </div>
 </div>
 
@@ -77,19 +94,13 @@
     <p id="saldo-real">Saldo real (com dívidas): €0</p>
   </div>
 
-  <!-- GRÁFICOS -->
+  <!-- GRÁFICO GERAL -->
   <div class="card">
     <h3>📈 Ganhos vs Gastos</h3>
     <canvas id="graficoFinanceiro"></canvas>
-
-    <h3 style="margin-top:20px">📊 Receitas por categoria</h3>
-    <canvas id="graficoReceitas"></canvas>
-
-    <h3 style="margin-top:20px">📊 Despesas por categoria</h3>
-    <canvas id="graficoDespesas"></canvas>
   </div>
 
-  <!-- RECEITAS -->
+  <!-- RECEITAS FORM -->
   <div class="card">
     <h3>➕ Nova Receita</h3>
     <input id="r-desc" placeholder="Descrição">
@@ -107,12 +118,18 @@
     <button onclick="addReceita()">Salvar Receita</button>
   </div>
 
+  <!-- RECEITAS LISTA -->
   <div class="card">
-    <h3>📊 Lista de Receitas</h3>
-    <div id="lista-receitas"></div>
+    <div class="section-header" onclick="toggleSection('lista-receitas-wrap')">
+      <h3>📊 Lista de Receitas <span id="count-receitas" class="count-badge"></span></h3>
+      <span class="chevron" id="chevron-lista-receitas-wrap">▼</span>
+    </div>
+    <div id="lista-receitas-wrap" class="section-body">
+      <div id="lista-receitas"></div>
+    </div>
   </div>
 
-  <!-- DESPESAS -->
+  <!-- DESPESAS FORM -->
   <div class="card">
     <h3>➖ Nova Despesa</h3>
     <input id="d-desc" placeholder="Descrição">
@@ -132,12 +149,18 @@
     <button onclick="addDespesa()">Salvar Despesa</button>
   </div>
 
+  <!-- DESPESAS LISTA -->
   <div class="card">
-    <h3>📉 Lista de Despesas</h3>
-    <div id="lista-despesas"></div>
+    <div class="section-header" onclick="toggleSection('lista-despesas-wrap')">
+      <h3>📉 Lista de Despesas <span id="count-despesas" class="count-badge"></span></h3>
+      <span class="chevron" id="chevron-lista-despesas-wrap">▼</span>
+    </div>
+    <div id="lista-despesas-wrap" class="section-body">
+      <div id="lista-despesas"></div>
+    </div>
   </div>
 
-  <!-- DÍVIDAS -->
+  <!-- DÍVIDAS FORM -->
   <div class="card">
     <h3>💳 Nova Dívida</h3>
     <input id="div-desc" placeholder="Ex: Cartão Nubank">
@@ -149,15 +172,26 @@
     <button onclick="addDivida()">Salvar Dívida</button>
   </div>
 
+  <!-- DÍVIDAS LISTA -->
   <div class="card">
-    <h3>📋 Suas Dívidas</h3>
-    <div id="lista-dividas"></div>
+    <div class="section-header" onclick="toggleSection('lista-dividas-wrap')">
+      <h3>📋 Suas Dívidas <span id="count-dividas" class="count-badge"></span></h3>
+      <span class="chevron" id="chevron-lista-dividas-wrap">▼</span>
+    </div>
+    <div id="lista-dividas-wrap" class="section-body">
+      <div id="lista-dividas"></div>
+    </div>
   </div>
 
   <!-- HISTÓRICO -->
   <div class="card">
-    <h3>📜 Histórico de alterações</h3>
-    <div id="lista-historico"><p style="color:#94a3b8">Nenhuma alteração ainda</p></div>
+    <div class="section-header" onclick="toggleSection('historico-wrap')">
+      <h3>📜 Histórico de alterações</h3>
+      <span class="chevron collapsed" id="chevron-historico-wrap">▶</span>
+    </div>
+    <div id="historico-wrap" class="section-body collapsed">
+      <div id="lista-historico"><p style="color:#94a3b8">Nenhuma alteração ainda</p></div>
+    </div>
   </div>
 
 </div>

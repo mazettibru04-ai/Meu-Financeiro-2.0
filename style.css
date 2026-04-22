@@ -32,7 +32,7 @@ h1 {
 
 h3 {
   font-family: 'Syne', sans-serif;
-  margin-bottom: 10px;
+  margin-bottom: 0;
   font-size: 15px;
   color: #cbd5e1;
 }
@@ -48,6 +48,9 @@ h3 {
 }
 
 .card:hover { transform: translateY(-3px); border-color: rgba(56,189,248,0.4); }
+
+/* Evita hover nos cards filhos de lista causarem lift duplo */
+.card .card:hover { transform: none; }
 
 .highlight { border: 1px solid #38bdf8; background: rgba(56,189,248,0.05); }
 
@@ -90,7 +93,10 @@ button {
 
 button:hover { transform: scale(1.02); opacity: 0.95; }
 
-.actions { display: flex; gap: 6px; margin-top: 10px; }
+/* =====================
+   ACTIONS
+   ===================== */
+.actions { display: flex; gap: 6px; margin-top: 10px; flex-wrap: wrap; }
 
 .actions button {
   font-size: 12px;
@@ -100,6 +106,7 @@ button:hover { transform: scale(1.02); opacity: 0.95; }
   width: auto;
   flex: 1;
   transform: none;
+  min-width: 80px;
 }
 
 .actions button:hover { background: #475569; transform: none; opacity: 1; }
@@ -108,9 +115,76 @@ button:hover { transform: scale(1.02); opacity: 0.95; }
   background: linear-gradient(135deg, #0ea5e9, #0284c7);
   font-weight: 700;
 }
-
 .actions button.btn-pagar:hover { opacity: 0.9; }
 
+.actions button.btn-editar {
+  background: linear-gradient(135deg, #a855f7, #7c3aed);
+}
+.actions button.btn-editar:hover { opacity: 0.9; }
+
+.actions button.btn-remover {
+  background: rgba(239,68,68,0.2);
+  color: #fca5a5;
+  border: 1px solid rgba(239,68,68,0.25);
+}
+.actions button.btn-remover:hover { background: rgba(239,68,68,0.35); }
+
+/* =====================
+   SECTION COLLAPSIBLE
+   ===================== */
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  user-select: none;
+  padding: 2px 0;
+}
+
+.section-header:hover .chevron { color: var(--accent); }
+
+.chevron {
+  font-size: 12px;
+  color: var(--muted);
+  transition: transform 0.3s ease, color 0.2s;
+  display: inline-block;
+}
+
+.chevron.collapsed { transform: rotate(-90deg); }
+
+.section-body {
+  overflow: hidden;
+  max-height: 2000px;
+  transition: max-height 0.4s cubic-bezier(0.4,0,0.2,1),
+              opacity 0.3s ease,
+              margin-top 0.3s ease;
+  margin-top: 12px;
+  opacity: 1;
+}
+
+.section-body.collapsed {
+  max-height: 0;
+  opacity: 0;
+  margin-top: 0;
+}
+
+/* COUNT BADGE */
+.count-badge {
+  display: inline-block;
+  background: rgba(56,189,248,0.15);
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 700;
+  padding: 1px 7px;
+  border-radius: 99px;
+  margin-left: 8px;
+  font-family: 'Syne', sans-serif;
+  vertical-align: middle;
+}
+
+/* =====================
+   TEXTO
+   ===================== */
 p { margin: 5px 0; color: #e2e8f0; font-size: 14px; }
 small { color: #94a3b8; font-size: 12px; }
 
@@ -182,7 +256,7 @@ hr { border: none; border-top: 1px solid rgba(255,255,255,0.08); margin: 10px 0;
 }
 
 /* =====================
-   MODAL
+   MODAL BASE
    ===================== */
 .modal-overlay {
   position: fixed;
@@ -232,7 +306,7 @@ hr { border: none; border-top: 1px solid rgba(255,255,255,0.08); margin: 10px 0;
   margin-bottom: 20px;
 }
 
-/* ANEL CIRCULAR */
+/* ANEL */
 .ring-wrap {
   display: flex;
   justify-content: center;
@@ -341,4 +415,40 @@ hr { border: none; border-top: 1px solid rgba(255,255,255,0.08); margin: 10px 0;
   font-weight: 500;
 }
 
-.btn-fechar:hover { background: rgba(255,255,255,0.09) !important; transform: none !important; opacity: 1 !important; }
+.btn-fechar:hover {
+  background: rgba(255,255,255,0.09) !important;
+  transform: none !important;
+  opacity: 1 !important;
+}
+
+/* HISTÓRICO ITEM */
+.historico-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.historico-item:last-child { border-bottom: none; }
+
+.historico-icon {
+  font-size: 18px;
+  line-height: 1;
+  margin-top: 1px;
+  flex-shrink: 0;
+}
+
+.historico-info { flex: 1; }
+
+.historico-acao {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.historico-detalhe {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 2px;
+}
