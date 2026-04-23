@@ -12,7 +12,7 @@ limit
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 // =====================
-// 🔐 GARANTE USUÁRIO LOGADO
+// 🔐 USUÁRIO
 // =====================
 function getPath(nome) {
 if (!window.userId) return null;
@@ -20,7 +20,7 @@ return collection(db, "usuarios", window.userId, nome);
 }
 
 // =====================
-// CACHE GLOBAL
+// CACHE
 // =====================
 const _cache = {};
 function guardar(id, data) { _cache[id] = data; }
@@ -33,12 +33,6 @@ let taxa = 0;
 let totalReceitas = 0;
 let totalDespesas = 0;
 let totalDividas = 0;
-
-let modalDividaId = null;
-let editId = null;
-let editColecao = null;
-let corrigirDividaId = null;
-
 let chart;
 
 // =====================
@@ -58,10 +52,6 @@ function eur(v, m) {
 if (m === "EUR") return Number(v);
 if (m === "BRL" && taxa > 0) return Number(v) / taxa;
 return Number(v);
-}
-
-function brl(valorEur) {
-return taxa > 0 ? valorEur * taxa : null;
 }
 
 // =====================
@@ -113,7 +103,9 @@ data: [totalReceitas, totalDespesas, saldo],
 backgroundColor: ["#22c55e", "#ef4444", "#3b82f6"]
 }]
 },
-options: { plugins: { legend: { display: false } } }
+options: {
+plugins: { legend: { display: false } }
+}
 });
 }
 
@@ -125,7 +117,11 @@ const ref = getPath("historico");
 if (!ref) return;
 
 await addDoc(ref, {
-acao, desc, valor: String(valor), moeda, criadoEm: Date.now()
+acao,
+desc,
+valor: String(valor),
+moeda,
+criadoEm: Date.now()
 });
 }
 
@@ -143,7 +139,14 @@ const moeda = document.getElementById("r-moeda").value;
 
 if (!desc || val <= 0) return alert("Preencha corretamente");
 
-await addDoc(ref, { desc, categoria: cat, val, moeda, criadoEm: Date.now() });
+await addDoc(ref, {
+desc,
+categoria: cat,
+val,
+moeda,
+criadoEm: Date.now()
+});
+
 await registrarHistorico("➕ Receita", desc, val, moeda);
 
 document.getElementById("r-desc").value = "";
@@ -164,7 +167,14 @@ const moeda = document.getElementById("d-moeda").value;
 
 if (!desc || val <= 0) return alert("Preencha corretamente");
 
-await addDoc(ref, { desc, categoria: cat, val, moeda, criadoEm: Date.now() });
+await addDoc(ref, {
+desc,
+categoria: cat,
+val,
+moeda,
+criadoEm: Date.now()
+});
+
 await registrarHistorico("➖ Despesa", desc, val, moeda);
 
 document.getElementById("d-desc").value = "";
@@ -213,6 +223,8 @@ onSnapshot(q, callback);
 // STREAMS
 // =====================
 function iniciarStreams() {
+
+// RECEITAS
 stream("receitas", (snap) => {
 totalReceitas = 0;
 let html = "";
@@ -226,12 +238,15 @@ snap.forEach((i) => {
   html += `<div class="card">${r.desc} - € ${fmt(v)}</div>`;
 });
 
-document.getElementById("lista-receitas").innerHTML = html;
+document.getElementById("lista-receitas").innerHTML =
+  html || "<p style='color:#94a3b8'>Nenhuma receita</p>";
+
 atualizarResumo();
 ```
 
 });
 
+// DESPESAS
 stream("despesas", (snap) => {
 totalDespesas = 0;
 let html = "";
@@ -245,12 +260,15 @@ snap.forEach((i) => {
   html += `<div class="card">${d.desc} - € ${fmt(v)}</div>`;
 });
 
-document.getElementById("lista-despesas").innerHTML = html;
+document.getElementById("lista-despesas").innerHTML =
+  html || "<p style='color:#94a3b8'>Nenhuma despesa</p>";
+
 atualizarResumo();
 ```
 
 });
 
+// DÍVIDAS
 stream("dividas", (snap) => {
 totalDividas = 0;
 let html = "";
@@ -267,24 +285,30 @@ snap.forEach((i) => {
   html += `<div class="card">${d.desc} - € ${fmt(resta)}</div>`;
 });
 
-document.getElementById("lista-dividas").innerHTML = html;
+document.getElementById("lista-dividas").innerHTML =
+  html || "<p style='color:#94a3b8'>Nenhuma dívida</p>";
+
 atualizarResumo();
 ```
 
 });
 
+// HISTÓRICO
 stream("historico", (snap) => {
 let html = "";
+
+```
 snap.forEach((i) => {
-const h = i.data();
-html += `<p>${h.acao} - ${h.desc}</p>`;
+  const h = i.data();
+  html += `<p>${h.acao} - ${h.desc}</p>`;
 });
 
-```
-document.getElementById("lista-historico").innerHTML = html;
+document.getElementById("lista-historico").innerHTML =
+  html || "<p style='color:#94a3b8'>Nenhuma alteração</p>";
 ```
 
 });
+
 }
 
 // =====================
