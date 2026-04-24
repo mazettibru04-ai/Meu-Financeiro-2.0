@@ -1452,10 +1452,10 @@ function iniciarStreamProdutos() {
 
   const q = query(ref, orderBy("criadoEm", "desc"));
   const u = onSnapshot(q, (snap) => {
-    // Reseta cache de SKUs para este usuário
+
     for (const key of Object.keys(_skusEmCache)) delete _skusEmCache[key];
 
-    let html        = "";
+    let html = "";
     let totalAtivos = 0;
 
     snap.forEach((i) => {
@@ -1467,29 +1467,21 @@ function iniciarStreamProdutos() {
       html += renderCardProduto(i.id, p);
     });
 
-    document.getElementById("count-produtos").textContent  = snap.size || "";
-    document.getElementById("lista-produtos").innerHTML    =
+    document.getElementById("count-produtos").textContent = snap.size || "";
+    document.getElementById("lista-produtos").innerHTML =
       html || "<p style='color:#94a3b8'>Nenhum produto cadastrado</p>";
 
-    const elTotal  = document.getElementById("stat-produtos-total");
+    const elTotal = document.getElementById("stat-produtos-total");
     const elAtivos = document.getElementById("stat-produtos-ativos");
-    if (elTotal)  elTotal.textContent  = snap.size;
+
+    if (elTotal) elTotal.textContent = snap.size;
     if (elAtivos) elAtivos.textContent = totalAtivos;
 
-    // ✅ AGORA SIM — ATUALIZA NO MOMENTO CERTO
+    // ESSENCIAL
     atualizarCacheProdutosAtivos();
   });
 
   unsubs.push(u);
-}
-
-// =====================
-// CACHE DE PRODUTOS ATIVOS (para busca rápida)
-// =====================
-function atualizarCacheProdutosAtivos() {
-  _produtosAtivos = Object.keys(_cache)
-    .map(id => ({ _id: id, ...recuperar(id) }))
-    .filter(p => p.__tipo === "produto" && p.ativo);
 }
 
 // ============================================================
