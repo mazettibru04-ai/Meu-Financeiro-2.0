@@ -976,5 +976,524 @@ function iniciarStreamProdutos() {
   unsubs.push(u);
 }
 // ============================================================
+// MÓDULO: VENDAS
+// Arquitetura event-driven com controle de estoque
+// ============================================================
+
+// Estado do módulo
+let vendaItens = []; // Array de itens da venda atual
+let proximoNumeroVenda = 1;
+let _produtosAtivos = []; // Cache de produtos ativos para busca rápida
+
+// =====================
+// FECHAR MODAL VENDA
+// =====================
+document.getElementById("modal-venda")?.addEventListener("click", e => {
+  if (e.target === e.currentTarget) fecharModalVenda();
+});
+
+window.fecharModalVenda = function() {
+  document.getElementById("modal-venda")?.classList.remove("active");
+  vendaItens = [];
+  document.getElementById("v-cliente").value = "";
+  document.getElementById("v-busca-produto").value = "";
+  document.getElementById("v-produto-dropdown").style.display = "none";
+  renderItensVenda();
+};
+
+// =====================
+// ABRIR MODAL NOVA VENDA
+// =====================
+window.abrirModalNovaVenda = function() {
+  vendaItens = [];
+  document.getElementById("v-cliente").value = "";
+  document.getElementById("v-busca-produto").value = "";
+  document.getElementById("v-forma-pagamento").value = "Dinheiro";
+  document.getElementById("v-status").value = "Pendente";
+  document.getElementById("v-produto-dropdown").style.display = "none";
+  renderItensVenda();
+  document.getElementById("modal-venda").classList.add("active");
+};
+
+// =====================
+// BUSCAR PRODUTO (autocomplete)
+// =====================
+window.buscarProdutoVenda = function() {
+  const busca = document.getElementById("v-busca-produto").value.toLowerCase().trim();
+  const dropdown = document.getElementById("v-produto-dropdown");
+
+  if (!busca || busca.length < 2) {
+    dropdown.style.display = "none";
+    return;
+  }
+
+  const resultados = _produtosAtivos.filter(p => 
+    p.nome.toLowerCase().includes(busca) || 
+    p.sku.toLowerCase().includes(busca)
+  ).slice(0, 8); // Máximo 8 resultados
+
+  if (!resultados.length) {
+    dropdown.innerHTML = `<div style="padding:12px;color:#94a3b8;font-size:13px">Nenhum produto encontrado</div>`;
+    dropdown.style.display = "block";
+    return;
+  }
+
+  let html = "";
+  resultados.forEach(p => {
+    const estoqueOk = p.estoqueAtual > 0;
+    html += `
+      <div onclick="adicionarItemVenda('${p._id}')" 
+        style="padding:10px 12px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.05);transition:background 0.2s"
+        onmouseover="this.style.background='rgba(56,189,248,0.08)'"
+        onmouseout="this.style.background='transparent'">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <div style="font-size:13px;font-weight:600">${p.nome}</div>
+            <div style="font-size:11px;color:#94a3b8">SKU: ${p.sku} · R$ ${fmt(p.precoVenda)}</div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-size:11px;color:${estoqueOk ? '#22c55e' : '#ef4444'};font-weight:600">
+              ${estoqueOk ? `${p.estoqueAtual} un` : 'SEM ESTOQUE'}
+            </div>
+          </div>
+        </div>
+      </div>`;
+  });
+
+  dropdown.innerHTML = html;
+  dropdown.style.display = "block";
+};
+
+// =====================
+// ADICIONAR ITEM À VENDA
+// =====================
+window.adicionarItemVenda = function(produtoId) {
+  const produto = _produtosAtivos.find(p => p._id === produtoId);
+  if (!produto) return alert("Produto não encontrado");
+
+  if (!produto.ativo) return alert("Produto inativo não pode ser vendido");
+  if (produto.controlaEstoque && produto.estoqueAtual <= 0) 
+    return alert(`Produto "${produto.nome}" sem estoque disponível`);
+
+  // Verifica se já existe na lista
+  const itemExistente = vendaItens.find(i => i.produtoId === produtoId);
+  
+  if (itemExistente) {
+    const novaQtd = itemExistente.quantidade + 1;
+    if (produto.controlaEstoque && novaQtd > produto.estoqueAtual) {
+      return alert(`Estoque insuficiente. Disponível: ${produto.estoqueAtual} un`);
+    }
+    itemExistente.quantidade = novaQtd;
+    itemExistente.subtotal = itemExistente.quantidade * itemExistente.preco;
+  } else {
+    vendaItens.push({
+      produtoId: produtoId,
+      nome: produto.nome,
+      sku: produto.sku,
+      preco: produto.precoVenda,
+      quantidade: 1,
+      subtotal: produto.precoVenda,
+      controlaEstoque: produto.controlaEstoque,
+      estoqueDisponivel: produto.estoqueAtual
+    });
+  }
+
+  document.getElementById("v-busca-produto").value = "";
+  document.getElementById("v-produto-dropdown").style.display = "none";
+  renderItensVenda();
+};
+
+// =====================
+// ALTERAR QUANTIDADE
+// =====================
+window.alterarQuantidadeItem = function(index, delta) {
+  const item = vendaItens[index];
+  if (!item) return;
+
+  const novaQtd = item.quantidade + delta;
+  if (novaQtd <= 0) return removerItemVenda(index);
+
+  if (item.controlaEstoque && novaQtd > item.estoqueDisponivel) {
+    return alert(`Estoque insuficiente. Disponível: ${item.estoqueDisponivel} un`);
+  }
+
+  item.quantidade = novaQtd;
+  item.subtotal = item.quantidade * item.preco;
+  renderItensVenda();
+};
+
+// =====================
+// REMOVER ITEM
+// =====================
+window.removerItemVenda = function(index) {
+  vendaItens.splice(index, 1);
+  renderItensVenda();
+};
+
+// =====================
+// RENDER ITENS DA VENDA
+// =====================
+function renderItensVenda() {
+  const container = document.getElementById("v-itens-lista");
+  const vazio = document.getElementById("v-itens-vazio");
+
+  if (!vendaItens.length) {
+    container.innerHTML = "";
+    vazio.style.display = "block";
+    document.getElementById("v-total").textContent = "R$ 0,00";
+    return;
+  }
+
+  vazio.style.display = "none";
+  let html = "";
+  let total = 0;
+
+  vendaItens.forEach((item, idx) => {
+    total += item.subtotal;
+    html += `
+      <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:10px 12px;margin-bottom:8px">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
+          <div style="flex:1">
+            <div style="font-size:13px;font-weight:600">${item.nome}</div>
+            <div style="font-size:11px;color:#94a3b8">SKU: ${item.sku} · R$ ${fmt(item.preco)}/un</div>
+          </div>
+          <button onclick="removerItemVenda(${idx})" 
+            style="width:auto;padding:4px 8px;background:rgba(239,68,68,0.15);color:#fca5a5;border:1px solid rgba(239,68,68,0.2);font-size:11px;border-radius:6px">
+            ✕
+          </button>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <div style="display:flex;align-items:center;gap:8px">
+            <button onclick="alterarQuantidadeItem(${idx}, -1)"
+              style="width:28px;height:28px;padding:0;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:6px;font-size:16px;line-height:1">
+              −
+            </button>
+            <span style="font-family:'Syne',sans-serif;font-size:15px;font-weight:700;min-width:30px;text-align:center">
+              ${item.quantidade}
+            </span>
+            <button onclick="alterarQuantidadeItem(${idx}, 1)"
+              style="width:28px;height:28px;padding:0;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:6px;font-size:16px;line-height:1">
+              +
+            </button>
+          </div>
+          <div style="font-family:'Syne',sans-serif;font-size:15px;font-weight:700;color:#22c55e">
+            R$ ${fmt(item.subtotal)}
+          </div>
+        </div>
+      </div>`;
+  });
+
+  container.innerHTML = html;
+  document.getElementById("v-total").textContent = `R$ ${fmt(total)}`;
+}
+
+// =====================
+// SALVAR VENDA
+// =====================
+window.salvarVenda = async function() {
+  const refVendas = getCol("vendas");
+  const refMovimentos = getCol("movimentos_estoque");
+  if (!refVendas || !refMovimentos) return alert("Faça login primeiro");
+
+  if (!vendaItens.length) return alert("Adicione pelo menos um item à venda");
+
+  const cliente = document.getElementById("v-cliente").value.trim() || "Cliente não informado";
+  const formaPagamento = document.getElementById("v-forma-pagamento").value;
+  const status = document.getElementById("v-status").value;
+
+  const total = vendaItens.reduce((sum, item) => sum + item.subtotal, 0);
+
+  if (!confirm(`Finalizar venda de R$ ${fmt(total)}?`)) return;
+
+  try {
+    // Cria a venda
+    const vendaPayload = {
+      numero: proximoNumeroVenda,
+      cliente,
+      itens: vendaItens.map(i => ({
+        produtoId: i.produtoId,
+        nome: i.nome,
+        sku: i.sku,
+        preco: i.preco,
+        quantidade: i.quantidade,
+        subtotal: i.subtotal
+      })),
+      total,
+      formaPagamento,
+      status,
+      criadoEm: Date.now()
+    };
+
+    const vendaDoc = await addDoc(refVendas, vendaPayload);
+
+    // Gera movimentos de estoque (saída)
+    for (const item of vendaItens) {
+      if (item.controlaEstoque) {
+        await addDoc(refMovimentos, {
+          tipo: "saida",
+          origem: "venda",
+          produtoId: item.produtoId,
+          produtoNome: item.nome,
+          quantidade: item.quantidade,
+          referenciaId: vendaDoc.id,
+          referenciaNumero: proximoNumeroVenda,
+          criadoEm: Date.now()
+        });
+
+        // Atualiza estoque do produto
+        const produtoRef = getDoc("produtos", item.produtoId);
+        const produtoAtual = recuperar(item.produtoId);
+        if (produtoRef && produtoAtual) {
+          await updateDoc(produtoRef, {
+            estoqueAtual: produtoAtual.estoqueAtual - item.quantidade
+          });
+        }
+      }
+    }
+
+    // Se status = Pago, gera receita automática
+    if (status === "Pago") {
+      const refReceitas = getCol("receitas");
+      if (refReceitas) {
+        await addDoc(refReceitas, {
+          desc: `Venda #${proximoNumeroVenda} - ${cliente}`,
+          categoria: "Vendas",
+          val: total,
+          moeda: "BRL",
+          origemId: vendaDoc.id,
+          origemTipo: "venda",
+          criadoEm: Date.now()
+        });
+      }
+    }
+
+    await registrarHistorico("🛒 Venda realizada", `#${proximoNumeroVenda} - ${cliente}`, total, "BRL");
+
+    alert(`✅ Venda #${proximoNumeroVenda} finalizada com sucesso!`);
+    fecharModalVenda();
+
+  } catch (e) {
+    console.error(e);
+    alert("Erro ao salvar venda: " + e.message);
+  }
+};
+
+// =====================
+// MARCAR VENDA COMO PAGA
+// =====================
+window.marcarVendaPaga = async function(vendaId) {
+  const venda = recuperar(vendaId);
+  if (!venda) return;
+
+  if (venda.status === "Pago") return alert("Venda já está paga");
+  if (venda.status === "Cancelado") return alert("Venda cancelada não pode ser paga");
+
+  if (!confirm(`Marcar venda #${venda.numero} como paga?`)) return;
+
+  const refVenda = getDoc("vendas", vendaId);
+  if (!refVenda) return;
+
+  await updateDoc(refVenda, { status: "Pago" });
+
+  // Gera receita no financeiro
+  const refReceitas = getCol("receitas");
+  if (refReceitas) {
+    await addDoc(refReceitas, {
+      desc: `Venda #${venda.numero} - ${venda.cliente}`,
+      categoria: "Vendas",
+      val: venda.total,
+      moeda: "BRL",
+      origemId: vendaId,
+      origemTipo: "venda",
+      criadoEm: Date.now()
+    });
+  }
+
+  await registrarHistorico("💰 Venda paga", `#${venda.numero}`, venda.total, "BRL");
+};
+
+// =====================
+// CANCELAR VENDA (reverte estoque)
+// =====================
+window.cancelarVenda = async function(vendaId) {
+  const venda = recuperar(vendaId);
+  if (!venda) return;
+
+  if (venda.status === "Cancelado") return alert("Venda já está cancelada");
+
+  if (!confirm(
+    `Cancelar venda #${venda.numero}?\n\n` +
+    `Isso reverterá ${venda.itens.length} item(ns) ao estoque.`
+  )) return;
+
+  const refVenda = getDoc("vendas", vendaId);
+  const refMovimentos = getCol("movimentos_estoque");
+  if (!refVenda || !refMovimentos) return;
+
+  try {
+    // Reverte estoque
+    for (const item of venda.itens) {
+      const produto = recuperar(item.produtoId);
+      if (!produto || !produto.controlaEstoque) continue;
+
+      // Movimento de entrada (reversão)
+      await addDoc(refMovimentos, {
+        tipo: "entrada",
+        origem: "cancelamento_venda",
+        produtoId: item.produtoId,
+        produtoNome: item.nome,
+        quantidade: item.quantidade,
+        referenciaId: vendaId,
+        referenciaNumero: venda.numero,
+        criadoEm: Date.now()
+      });
+
+      // Atualiza estoque do produto
+      const produtoRef = getDoc("produtos", item.produtoId);
+      await updateDoc(produtoRef, {
+        estoqueAtual: produto.estoqueAtual + item.quantidade
+      });
+    }
+
+    await updateDoc(refVenda, { status: "Cancelado" });
+    await registrarHistorico("❌ Venda cancelada", `#${venda.numero}`, venda.total, "BRL");
+
+    alert("Venda cancelada e estoque revertido");
+
+  } catch (e) {
+    console.error(e);
+    alert("Erro ao cancelar venda: " + e.message);
+  }
+};
+
+// =====================
+// RENDER CARD VENDA
+// =====================
+function renderCardVenda(id, v) {
+  const statusBadge = v.status === "Pago" 
+    ? `<span class="badge-pago">✅ Pago</span>`
+    : v.status === "Cancelado"
+    ? `<span style="display:inline-block;background:rgba(239,68,68,0.15);color:#fca5a5;border:1px solid rgba(239,68,68,0.3);font-size:11px;font-weight:600;padding:2px 8px;border-radius:99px">❌ Cancelado</span>`
+    : `<span style="display:inline-block;background:rgba(245,158,11,0.15);color:#fcd34d;border:1px solid rgba(245,158,11,0.3);font-size:11px;font-weight:600;padding:2px 8px;border-radius:99px">⏳ Pendente</span>`;
+
+  const dataVenda = new Date(v.criadoEm).toLocaleDateString("pt-BR");
+
+  let itensHTML = "";
+  v.itens.forEach(i => {
+    itensHTML += `<div style="font-size:12px;color:#94a3b8;margin:2px 0">• ${i.quantidade}x ${i.nome} - R$ ${fmt(i.subtotal)}</div>`;
+  });
+
+  return `
+    <div class="card ${v.status === "Cancelado" ? "pago-total" : ""}">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
+        <div>
+          <strong>Venda #${v.numero} ${statusBadge}</strong>
+          <p style="color:#64748b;font-size:12px;margin:4px 0">${v.cliente}</p>
+          <p style="font-size:11px;color:#475569">${dataVenda} · ${v.formaPagamento}</p>
+        </div>
+        <div style="text-align:right">
+          <div style="font-family:'Syne',sans-serif;font-size:18px;font-weight:800;color:#22c55e">
+            R$ ${fmt(v.total)}
+          </div>
+          <div style="font-size:11px;color:#94a3b8">${v.itens.length} item(ns)</div>
+        </div>
+      </div>
+      
+      <div style="background:rgba(255,255,255,0.02);border-radius:8px;padding:8px;margin:10px 0">
+        ${itensHTML}
+      </div>
+
+      <div class="actions">
+        ${v.status === "Pendente" ? `<button class="btn-pagar" onclick="marcarVendaPaga('${id}')">💰 Marcar como Pago</button>` : ""}
+        ${v.status !== "Cancelado" ? `<button class="btn-remover" onclick="cancelarVenda('${id}')">❌ Cancelar</button>` : ""}
+      </div>
+    </div>`;
+}
+
+// =====================
+// FILTRAR VENDAS
+// =====================
+window.filtrarVendas = function() {
+  const busca = document.getElementById("vendas-busca")?.value.toLowerCase().trim() || "";
+  const filtroStatus = document.getElementById("vendas-filtro-status")?.value || "todos";
+
+  const vendas = Object.keys(_cache)
+    .map(id => ({ _id: id, ...recuperar(id) }))
+    .filter(v => v.__tipo === "venda");
+
+  const filtrado = vendas.filter(v => {
+    const matchBusca = !busca || v.cliente.toLowerCase().includes(busca);
+    const matchStatus = filtroStatus === "todos" || v.status === filtroStatus;
+    return matchBusca && matchStatus;
+  });
+
+  if (!filtrado.length) {
+    document.getElementById("lista-vendas").innerHTML = `<p style='color:#94a3b8'>Nenhuma venda encontrada</p>`;
+    document.getElementById("count-vendas").textContent = "";
+    return;
+  }
+
+  let html = "";
+  filtrado.forEach(v => html += renderCardVenda(v._id, v));
+
+  document.getElementById("lista-vendas").innerHTML = html;
+  document.getElementById("count-vendas").textContent = filtrado.length || "";
+};
+
+// =====================
+// STREAM VENDAS
+// =====================
+function iniciarStreamVendas() {
+  const ref = getCol("vendas");
+  if (!ref) return;
+
+  const q = query(ref, orderBy("criadoEm", "desc"));
+  const u = onSnapshot(q, (snap) => {
+    let html = "";
+    let totalVendas = 0;
+    let valorTotal = 0;
+    let pendentes = 0;
+
+    // Atualiza próximo número
+    let maiorNumero = 0;
+    snap.forEach(i => {
+      const v = i.data();
+      if (v.numero > maiorNumero) maiorNumero = v.numero;
+      guardar(i.id, { ...v, __tipo: "venda" });
+
+      totalVendas++;
+      if (v.status === "Pago") valorTotal += v.total;
+      if (v.status === "Pendente") pendentes++;
+
+      html += renderCardVenda(i.id, v);
+    });
+
+    proximoNumeroVenda = maiorNumero + 1;
+
+    document.getElementById("count-vendas").textContent = totalVendas || "";
+    document.getElementById("lista-vendas").innerHTML = 
+      html || "<p style='color:#94a3b8'>Nenhuma venda cadastrada</p>";
+
+    document.getElementById("stat-vendas-total").textContent = totalVendas;
+    document.getElementById("stat-vendas-valor").textContent = `R$ ${fmt(valorTotal)}`;
+    document.getElementById("stat-vendas-pendentes").textContent = pendentes;
+  });
+
+  unsubs.push(u);
+}
+
+// =====================
+// CACHE DE PRODUTOS ATIVOS (para busca rápida)
+// =====================
+function atualizarCacheProdutosAtivos() {
+  _produtosAtivos = Object.keys(_cache)
+    .map(id => ({ _id: id, ...recuperar(id) }))
+    .filter(p => p.__tipo === "produto" && p.ativo);
+}
+
+// ============================================================
+// FIM MÓDULO VENDAS
+// ============================================================
+// ============================================================
 // FIM MÓDULO PRODUTOS
 // ============================================================
