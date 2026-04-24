@@ -657,6 +657,7 @@ window.iniciarApp = async function() {
   iniciarStreamDividas();
   iniciarStreamHistorico();
   iniciarStreamProdutos();
+  iniciarStreamVendas();
 };
 
 // ============================================================
@@ -972,7 +973,9 @@ function iniciarStreamProdutos() {
     if (elTotal)  elTotal.textContent  = snap.size;
     if (elAtivos) elAtivos.textContent = totalAtivos;
   });
-
+// Atualiza cache de produtos ativos para vendas
+atualizarCacheProdutosAtivos();
+  
   unsubs.push(u);
 }
 // ============================================================
