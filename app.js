@@ -654,6 +654,7 @@ window.iniciarApp = async function() {
   iniciarStreamDespesas();
   iniciarStreamDividas();
   iniciarStreamHistorico();
+  iniciarStreamProdutos();
 };
 // =====================
 // PRODUTOS — MODAL NOVO
@@ -717,3 +718,49 @@ window.salvarProduto = async function () {
 
   fecharModalProduto();
 };
+// =====================
+// STREAM PRODUTOS
+// =====================
+function iniciarStreamProdutos() {
+  const ref = getCol("produtos");
+  if (!ref) return;
+
+  const q = query(ref, orderBy("criadoEm", "desc"));
+  const u = onSnapshot(q, (snap) => {
+    let html = "";
+    let total = 0;
+    let ativos = 0;
+
+    snap.forEach((i) => {
+      const p = i.data();
+      total++;
+      if (p.ativo) ativos++;
+
+      guardar(i.id, p);
+
+      const descEsc = p.nome.replace(/'/g, "\\'");
+
+      html += `
+        <div class="card">
+          <strong>${p.nome}</strong>
+          <p>SKU: ${p.sku}</p>
+          <p>€ ${fmt(p.preco)}</p>
+          <small>Estoque: ${p.estoque}</small>
+
+          <div class="actions">
+            <button onclick="deletarItem('produtos','${i.id}','${descEsc}')">🗑️ Remover</button>
+          </div>
+        </div>
+      `;
+    });
+
+    document.getElementById("lista-produtos").innerHTML =
+      html || "<p style='color:#94a3b8'>Nenhum produto</p>";
+
+    document.getElementById("count-produtos").textContent = snap.size || "";
+    document.getElementById("stat-produtos-total").textContent = total;
+    document.getElementById("stat-produtos-ativos").textContent = ativos;
+  });
+
+  unsubs.push(u);
+}
