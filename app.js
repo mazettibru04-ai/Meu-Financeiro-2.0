@@ -655,3 +655,65 @@ window.iniciarApp = async function() {
   iniciarStreamDividas();
   iniciarStreamHistorico();
 };
+// =====================
+// PRODUTOS — MODAL NOVO
+// =====================
+window.abrirModalNovoProduto = function () {
+  document.getElementById("produto-modal-titulo").textContent = "➕ Novo Produto";
+
+  // limpa campos
+  document.getElementById("p-nome").value = "";
+  document.getElementById("p-sku").value = "";
+  document.getElementById("p-preco").value = "";
+  document.getElementById("p-custo").value = "";
+  document.getElementById("p-estoque").value = 0;
+  document.getElementById("p-categoria").value = "Geral";
+  document.getElementById("p-ativo").checked = true;
+  document.getElementById("p-controla-estoque").checked = true;
+
+  document.getElementById("modal-produto").classList.add("active");
+};
+
+// =====================
+// FECHAR MODAL PRODUTO
+// =====================
+window.fecharModalProduto = function () {
+  document.getElementById("modal-produto").classList.remove("active");
+};
+
+// =====================
+// SALVAR PRODUTO
+// =====================
+window.salvarProduto = async function () {
+  const ref = getCol("produtos");
+  if (!ref) return alert("Faça login primeiro");
+
+  const nome = document.getElementById("p-nome").value.trim();
+  const sku = document.getElementById("p-sku").value.trim().toUpperCase();
+  const preco = Number(document.getElementById("p-preco").value);
+  const custo = Number(document.getElementById("p-custo").value) || 0;
+  const estoque = Number(document.getElementById("p-estoque").value) || 0;
+  const categoria = document.getElementById("p-categoria").value;
+  const ativo = document.getElementById("p-ativo").checked;
+  const controlaEstoque = document.getElementById("p-controla-estoque").checked;
+
+  if (!nome || !sku || preco <= 0) {
+    return alert("Preencha nome, SKU e preço corretamente");
+  }
+
+  await addDoc(ref, {
+    nome,
+    sku,
+    preco,
+    custo,
+    estoque,
+    categoria,
+    ativo,
+    controlaEstoque,
+    criadoEm: Date.now()
+  });
+
+  await registrarHistorico("📦 Produto criado", nome, preco, "€");
+
+  fecharModalProduto();
+};
