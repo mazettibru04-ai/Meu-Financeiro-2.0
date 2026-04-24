@@ -1446,40 +1446,38 @@ window.filtrarVendas = function() {
 // =====================
 // STREAM VENDAS
 // =====================
-function iniciarStreamVendas() {
-  const ref = getCol("vendas");
+function iniciarStreamProdutos() {
+  const ref = getCol("produtos");
   if (!ref) return;
 
   const q = query(ref, orderBy("criadoEm", "desc"));
   const u = onSnapshot(q, (snap) => {
-    let html = "";
-    let totalVendas = 0;
-    let valorTotal = 0;
-    let pendentes = 0;
+    // Reseta cache de SKUs para este usuário
+    for (const key of Object.keys(_skusEmCache)) delete _skusEmCache[key];
 
-    // Atualiza próximo número
-    let maiorNumero = 0;
-    snap.forEach(i => {
-      const v = i.data();
-      if (v.numero > maiorNumero) maiorNumero = v.numero;
-      guardar(i.id, { ...v, __tipo: "venda" });
+    let html        = "";
+    let totalAtivos = 0;
 
-      totalVendas++;
-      if (v.status === "Pago") valorTotal += v.total;
-      if (v.status === "Pendente") pendentes++;
+    snap.forEach((i) => {
+      const p = i.data();
+      guardar(i.id, { ...p, __tipo: "produto" });
+      _skusEmCache[i.id] = p.sku;
 
-      html += renderCardVenda(i.id, v);
+      if (p.ativo) totalAtivos++;
+      html += renderCardProduto(i.id, p);
     });
 
-    proximoNumeroVenda = maiorNumero + 1;
+    document.getElementById("count-produtos").textContent  = snap.size || "";
+    document.getElementById("lista-produtos").innerHTML    =
+      html || "<p style='color:#94a3b8'>Nenhum produto cadastrado</p>";
 
-    document.getElementById("count-vendas").textContent = totalVendas || "";
-    document.getElementById("lista-vendas").innerHTML = 
-      html || "<p style='color:#94a3b8'>Nenhuma venda cadastrada</p>";
+    const elTotal  = document.getElementById("stat-produtos-total");
+    const elAtivos = document.getElementById("stat-produtos-ativos");
+    if (elTotal)  elTotal.textContent  = snap.size;
+    if (elAtivos) elAtivos.textContent = totalAtivos;
 
-    document.getElementById("stat-vendas-total").textContent = totalVendas;
-    document.getElementById("stat-vendas-valor").textContent = `R$ ${fmt(valorTotal)}`;
-    document.getElementById("stat-vendas-pendentes").textContent = pendentes;
+    // ✅ AGORA SIM — ATUALIZA NO MOMENTO CERTO
+    atualizarCacheProdutosAtivos();
   });
 
   unsubs.push(u);
