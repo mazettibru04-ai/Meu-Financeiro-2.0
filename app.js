@@ -20,7 +20,9 @@ import {
   onSnapshot,
   orderBy,
   query,
-  limit
+  limit,
+  getDocs,
+  where
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 // =====================
@@ -654,4 +656,325 @@ window.iniciarApp = async function() {
   iniciarStreamDespesas();
   iniciarStreamDividas();
   iniciarStreamHistorico();
+  iniciarStreamProdutos();
 };
+
+// ============================================================
+// MÓDULO: PRODUTOS
+// Coleção: usuarios/{userId}/produtos
+// Não modifica nenhuma lógica existente do sistema.
+// ============================================================
+
+// Estado do módulo
+let produtoEditId  = null; // null = novo produto, string = edição
+let _skusEmCache   = {};   // { sku: docId } para validação rápida de duplicidade
+
+// =====================
+// FECHAR MODAL PRODUTO
+// Registrado junto com os outros modais
+// =====================
+document.getElementById("modal-produto")?.addEventListener("click", e => {
+  if (e.target === e.currentTarget) fecharModalProduto();
+});
+
+window.fecharModalProduto = function() {
+  document.getElementById("modal-produto")?.classList.remove("active");
+  produtoEditId = null;
+};
+
+// =====================
+// ABRIR MODAL — NOVO PRODUTO
+// =====================
+window.abrirModalNovoProduto = function() {
+  produtoEditId = null;
+
+  // Limpa todos os campos
+  document.getElementById("p-nome").value         = "";
+  document.getElementById("p-sku").value          = "";
+  document.getElementById("p-preco").value        = "";
+  document.getElementById("p-custo").value        = "";
+  document.getElementById("p-estoque").value      = "0";
+  document.getElementById("p-categoria").value    = "Geral";
+  document.getElementById("p-ativo").checked      = true;
+  document.getElementById("p-controla-estoque").checked = true;
+
+  document.getElementById("produto-modal-titulo").textContent = "➕ Novo Produto";
+  document.getElementById("p-sku").disabled = false;
+  document.getElementById("modal-produto").classList.add("active");
+};
+
+// =====================
+// ABRIR MODAL — EDITAR PRODUTO
+// =====================
+window.abrirModalEditarProduto = function(id) {
+  const data = recuperar(id);
+  if (!data) return;
+
+  produtoEditId = id;
+
+  document.getElementById("p-nome").value         = data.nome        || "";
+  document.getElementById("p-sku").value          = data.sku         || "";
+  document.getElementById("p-preco").value        = data.precoVenda  ?? "";
+  document.getElementById("p-custo").value        = data.custo       ?? "";
+  document.getElementById("p-estoque").value      = data.estoqueAtual ?? 0;
+  document.getElementById("p-categoria").value    = data.categoria   || "Geral";
+  document.getElementById("p-ativo").checked      = data.ativo !== false;
+  document.getElementById("p-controla-estoque").checked = data.controlaEstoque !== false;
+
+  document.getElementById("produto-modal-titulo").textContent = "✏️ Editar Produto";
+  // SKU não pode ser alterado após criação (evita colisões de índice)
+  document.getElementById("p-sku").disabled = true;
+
+  document.getElementById("modal-produto").classList.add("active");
+};
+
+// =====================
+// VALIDAR SKU ÚNICO
+// Consulta os SKUs já armazenados em cache local para resposta imediata.
+// Fallback para Firestore caso o cache ainda não esteja populado.
+// =====================
+async function skuJaExiste(sku, excludeId = null) {
+  // Verifica no cache primeiro (rápido, sem round-trip)
+  for (const [docId, docSku] of Object.entries(_skusEmCache)) {
+    if (docSku.toLowerCase() === sku.toLowerCase() && docId !== excludeId) {
+      return true;
+    }
+  }
+
+  // Fallback Firestore — garante consistência mesmo antes do stream carregar
+  const ref = getCol("produtos");
+  if (!ref) return false;
+
+  const q    = query(ref, where("sku", "==", sku.trim()));
+  const snap = await getDocs(q);
+
+  for (const d of snap.docs) {
+    if (d.id !== excludeId) return true;
+  }
+
+  return false;
+}
+
+// =====================
+// SALVAR PRODUTO (novo ou edição)
+// =====================
+window.salvarProduto = async function() {
+  const ref = getCol("produtos");
+  if (!ref) return alert("Faça login primeiro");
+
+  const nome      = document.getElementById("p-nome").value.trim();
+  const sku       = document.getElementById("p-sku").value.trim().toUpperCase();
+  const precoVenda = Number(document.getElementById("p-preco").value);
+  const custo      = Number(document.getElementById("p-custo").value) || 0;
+  const estoqueAtual = Number(document.getElementById("p-estoque").value) || 0;
+  const categoria  = document.getElementById("p-categoria").value;
+  const ativo      = document.getElementById("p-ativo").checked;
+  const controlaEstoque = document.getElementById("p-controla-estoque").checked;
+
+  // Validações
+  if (!nome)           return alert("Informe o nome do produto");
+  if (!sku)            return alert("Informe o SKU do produto");
+  if (precoVenda <= 0) return alert("Preço de venda deve ser maior que zero");
+
+  // Validação de SKU único (apenas no cadastro; edição mantém o mesmo SKU)
+  if (!produtoEditId) {
+    const duplicado = await skuJaExiste(sku);
+    if (duplicado) return alert(`SKU "${sku}" já está em uso. Escolha outro.`);
+  }
+
+  const payload = {
+    nome,
+    sku,
+    precoVenda,
+    custo,
+    estoqueAtual,
+    categoria,
+    ativo,
+    controlaEstoque
+  };
+
+  if (produtoEditId) {
+    // EDIÇÃO
+    const docR = getDoc("produtos", produtoEditId);
+    if (!docR) return;
+
+    if (!confirm(`Confirmar edição de "${nome}"?`)) return;
+
+    await updateDoc(docR, payload);
+    await registrarHistorico("✏️ Produto editado", nome, precoVenda, "BRL");
+  } else {
+    // NOVO
+    await addDoc(ref, { ...payload, criadoEm: Date.now() });
+    await registrarHistorico("📦 Produto adicionado", nome, precoVenda, "BRL");
+  }
+
+  fecharModalProduto();
+};
+
+// =====================
+// TOGGLE ATIVO/INATIVO
+// Não exclui o produto — apenas alterna o campo `ativo`.
+// =====================
+window.toggleAtivoProduto = async function(id) {
+  const data = recuperar(id);
+  if (!data) return;
+
+  const novoStatus = !data.ativo;
+  const acao       = novoStatus ? "ativar" : "desativar";
+
+  if (!confirm(`Deseja ${acao} o produto "${data.nome}"?`)) return;
+
+  const docR = getDoc("produtos", id);
+  if (!docR) return;
+
+  await updateDoc(docR, { ativo: novoStatus });
+  await registrarHistorico(
+    novoStatus ? "✅ Produto ativado" : "⏸️ Produto desativado",
+    data.nome, "-", "-"
+  );
+
+  // Atualiza cache imediatamente para refletir na UI sem esperar o snapshot
+  guardar(id, { ...data, ativo: novoStatus });
+};
+
+// =====================
+// DELETAR PRODUTO
+// =====================
+window.deletarProduto = async function(id) {
+  const data = recuperar(id);
+  if (!data) return;
+
+  if (!confirm(
+    `Remover o produto "${data.nome}" (SKU: ${data.sku})?\n\nEssa ação não pode ser desfeita.`
+  )) return;
+
+  const docR = getDoc("produtos", id);
+  if (!docR) return;
+
+  await deleteDoc(docR);
+  await registrarHistorico("🗑️ Produto removido", data.nome, "-", "-");
+
+  // Remove do cache de SKUs
+  delete _skusEmCache[id];
+};
+
+// =====================
+// RENDER — card de produto
+// =====================
+function renderCardProduto(id, p) {
+  const nomeEsc = p.nome.replace(/'/g, "\\'");
+  const margem  = p.precoVenda > 0 && p.custo > 0
+    ? (((p.precoVenda - p.custo) / p.precoVenda) * 100).toFixed(1)
+    : null;
+
+  const statusBadge = p.ativo
+    ? `<span class="badge-pago">✅ Ativo</span>`
+    : `<span style="display:inline-block;background:rgba(239,68,68,0.15);color:#fca5a5;border:1px solid rgba(239,68,68,0.3);font-size:11px;font-weight:600;padding:2px 8px;border-radius:99px;margin-left:6px;vertical-align:middle">⏸ Inativo</span>`;
+
+  const estoqueInfo = p.controlaEstoque
+    ? `<p style="margin:4px 0"><small>Estoque: <strong style="color:${p.estoqueAtual > 0 ? "#22c55e" : "#ef4444"}">${p.estoqueAtual} un</strong></small></p>`
+    : `<p><small style="color:#475569">Sem controle de estoque</small></p>`;
+
+  const margemInfo = margem !== null
+    ? `<small style="color:#94a3b8">Margem: ${margem}%</small>`
+    : "";
+
+  return `
+    <div class="card ${!p.ativo ? "pago-total" : ""}">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:4px">
+        <strong>${p.nome} ${statusBadge}</strong>
+        <span style="font-size:11px;background:rgba(56,189,248,0.1);color:#38bdf8;padding:2px 8px;border-radius:99px;border:1px solid rgba(56,189,248,0.2);white-space:nowrap;flex-shrink:0">
+          SKU: ${p.sku}
+        </span>
+      </div>
+      <p style="color:#64748b;font-size:12px;margin-bottom:6px">${p.categoria}</p>
+      <p>Preço: <strong>R$ ${fmt(p.precoVenda)}</strong>${p.custo > 0 ? ` · Custo: R$ ${fmt(p.custo)}` : ""}</p>
+      ${estoqueInfo}
+      ${margemInfo}
+      <div class="actions">
+        <button class="btn-editar"  onclick="abrirModalEditarProduto('${id}')">✏️ Editar</button>
+        <button class="${p.ativo ? "btn-corrigir" : "btn-pagar"}" onclick="toggleAtivoProduto('${id}')">${p.ativo ? "⏸ Desativar" : "▶ Ativar"}</button>
+        <button class="btn-remover" onclick="deletarProduto('${id}')">🗑️ Remover</button>
+      </div>
+    </div>`;
+}
+
+// =====================
+// FILTRAR PRODUTOS (busca em tempo real na lista local)
+// =====================
+window.filtrarProdutos = function() {
+  const busca    = document.getElementById("p-busca")?.value.toLowerCase().trim() || "";
+  const filtroSt = document.getElementById("p-filtro-status")?.value || "todos";
+  const filtroCat = document.getElementById("p-filtro-cat")?.value || "todas";
+
+  // Recupera todos os produtos do cache via _skusEmCache
+  const ids = Object.keys(_skusEmCache);
+  let html  = "";
+  let count = 0;
+
+  for (const id of ids) {
+    const p = recuperar(id);
+    if (!p || p.__tipo !== "produto") continue;
+
+    const matchBusca = !busca ||
+      p.nome.toLowerCase().includes(busca) ||
+      p.sku.toLowerCase().includes(busca)  ||
+      (p.categoria || "").toLowerCase().includes(busca);
+
+    const matchStatus = filtroSt === "todos" ||
+      (filtroSt === "ativo" && p.ativo) ||
+      (filtroSt === "inativo" && !p.ativo);
+
+    const matchCat = filtroCat === "todas" || p.categoria === filtroCat;
+
+    if (matchBusca && matchStatus && matchCat) {
+      html += renderCardProduto(id, p);
+      count++;
+    }
+  }
+
+  document.getElementById("count-produtos").textContent  = count || "";
+  document.getElementById("lista-produtos").innerHTML    =
+    html || "<p style='color:#94a3b8'>Nenhum produto encontrado</p>";
+};
+
+// =====================
+// STREAM PRODUTOS
+// =====================
+function iniciarStreamProdutos() {
+  const ref = getCol("produtos");
+  if (!ref) return;
+
+  const q = query(ref, orderBy("criadoEm", "desc"));
+  const u = onSnapshot(q, (snap) => {
+    // Reseta cache de SKUs para este usuário
+    for (const key of Object.keys(_skusEmCache)) delete _skusEmCache[key];
+
+    let html        = "";
+    let totalAtivos = 0;
+
+    snap.forEach((i) => {
+      const p = i.data();
+      guardar(i.id, { ...p, __tipo: "produto" }); // marca no cache para filtrarProdutos
+      _skusEmCache[i.id] = p.sku;
+
+      if (p.ativo) totalAtivos++;
+      html += renderCardProduto(i.id, p);
+    });
+
+    document.getElementById("count-produtos").textContent  = snap.size || "";
+    document.getElementById("lista-produtos").innerHTML    =
+      html || "<p style='color:#94a3b8'>Nenhum produto cadastrado</p>";
+
+    // Resumo do módulo
+    const elTotal  = document.getElementById("stat-produtos-total");
+    const elAtivos = document.getElementById("stat-produtos-ativos");
+    if (elTotal)  elTotal.textContent  = snap.size;
+    if (elAtivos) elAtivos.textContent = totalAtivos;
+  });
+
+  unsubs.push(u);
+}
+// ============================================================
+// FIM MÓDULO PRODUTOS
+// ============================================================
