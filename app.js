@@ -184,7 +184,7 @@ function iniciarStreamHistorico() {
         <div class="historico-item">
           <div class="historico-icon">${icone}</div>
           <div class="historico-info">
-            <div class="historico-acao">${texto} — ${h.desc}</div>
+            <div class="historico-acao">${texto} - ${h.desc}</div>
             <div class="historico-detalhe">${h.moeda !== "-" ? `${h.moeda} ${h.valor}` : ""} · ${hora}</div>
           </div>
         </div>`;
