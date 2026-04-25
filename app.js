@@ -547,7 +547,7 @@ function iniciarStreamDespesas() {
 
     snap.forEach((i) => {
       const d = i.data();
-      const v = eur(d.val, d.moeda);
+      const v = toEUR(d.val, d.moeda);
       totalDespesas += v;
       guardar(i.id, d);
 
