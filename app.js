@@ -87,7 +87,6 @@ function hojeISO() {
 // =====================
 // CÂMBIO
 // =====================
-import { setRates } from "./services/currencyService.js";
 
 async function pegarCambio() {
   try {
