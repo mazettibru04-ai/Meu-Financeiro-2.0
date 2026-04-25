@@ -10,7 +10,7 @@
  * NUNCA acesse o Firestore diretamente — use sempre getCol() e getDoc().
  */
 
-import { toEUR, toBRL, format } from "./services/currencyService.js";
+import { toEUR, fromEUR, convert, format as formatCurrency } from "./services/currencyService.js";
 import { calcularResumo } from "./core/financeCore.js";
 import { db } from "./firebase.js";
 import {
@@ -69,12 +69,6 @@ let chart;
 // =====================
 // UTILS
 // =====================
-function format(valor) {
-  return Number(valor).toLocaleString("pt-BR", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2
-  });
-}
 
 function eur(v, m) {
   if (m === "EUR") return Number(v);
@@ -266,10 +260,10 @@ window.abrirModalPagamento = function(id) {
   const pct      = Math.min(100, totalEUR > 0 ? Math.round((pagoEUR / totalEUR) * 100) : 0);
 
   document.getElementById("modal-nome").textContent       = data.desc;
-  document.getElementById("modal-moeda-info").textContent = `${data.moeda} ${fmt(data.valorOriginal)}`;
-  document.getElementById("modal-total").textContent      = `€ ${fmt(totalEUR)}`;
-  document.getElementById("modal-pago").textContent       = `€ ${fmt(pagoEUR)}`;
-  document.getElementById("modal-resta").textContent      = `€ ${fmt(restaEUR)}`;
+  document.getElementById("modal-moeda-info").textContent = `${data.moeda} ${formatCurrency(data.valorOriginal)}`;
+  document.getElementById("modal-total").textContent      = `€ ${formatCurrency(totalEUR)}`;
+  document.getElementById("modal-pago").textContent       = `€ ${formatCurrency(pagoEUR)}`;
+  document.getElementById("modal-resta").textContent      = `€ ${formatCurrency(restaEUR)}`;
   document.getElementById("modal-valor-pagar").value      = "";
 
   const circum   = 2 * Math.PI * 60; // r=60 → 377
@@ -511,7 +505,7 @@ function iniciarStreamReceitas() {
 
     snap.forEach((i) => {
       const r = i.data();
-      const v = toEUR(r.val, r.moeda, taxa);
+      const v = toEUR(valor, moeda);
       totalReceitas += v;
       guardar(i.id, r);
 
