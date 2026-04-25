@@ -418,9 +418,26 @@ window.deletarItem = async function(colecao, id, desc) {
   if (!ref) return;
 
   await deleteDoc(ref);
+  window.deletarItem = async function(colecao, id, desc) {
+  if (!confirm(`Remover "${desc}"?\n\nEssa ação não pode ser desfeita.`)) return;
+
+  const ref = getDoc(colecao, id);
+  if (!ref) return;
+
+  await deleteDoc(ref);
+
+  let tipo = "Item";
+
+  if (colecao === "receitas") tipo = "Receita";
+  else if (colecao === "despesas") tipo = "Despesa";
+  else if (colecao === "dividas") tipo = "Dívida";
+  else if (colecao === "produtos") tipo = "Produto";
+
   await registrarHistorico(
-    `🗑️ ${colecao === "receitas" ? "Receita" : colecao === "despesas" ? "Despesa" : "Dívida"} removida`,
-    desc, "-", "-"
+    `🗑️ ${tipo} removido`,
+    desc,
+    "-",
+    "-"
   );
 };
 
