@@ -10,6 +10,8 @@
  * NUNCA acesse o Firestore diretamente — use sempre getCol() e getDoc().
  */
 
+import { toEUR, toBRL, format } from "./services/currencyService.js";
+import { calcularResumo } from "./core/financeCore.js";
 import { db } from "./firebase.js";
 import {
   collection,
@@ -67,7 +69,7 @@ let chart;
 // =====================
 // UTILS
 // =====================
-function fmt(valor) {
+function format(valor) {
   return Number(valor).toLocaleString("pt-BR", {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2
@@ -500,7 +502,7 @@ function iniciarStreamReceitas() {
 
     snap.forEach((i) => {
       const r = i.data();
-      const v = eur(r.val, r.moeda);
+      const v = toEUR(r.val, r.moeda, taxa);
       totalReceitas += v;
       guardar(i.id, r);
 
