@@ -218,6 +218,40 @@
         <div id="lista-dividas"></div>
       </div>
     </div>
+    <!-- NOVO PRODUTO -->
+<div class="card">
+  <h3>📦 Novo Produto</h3>
+  <input id="p-nome" placeholder="Nome do produto">
+  <input id="p-categoria" placeholder="Categoria">
+  <input id="p-custo" type="number" placeholder="Preço de custo" min="0" step="0.01">
+  <input id="p-venda" type="number" placeholder="Preço de venda" min="0" step="0.01">
+  
+  <select id="p-moeda">
+    <option value="EUR">Euro (€)</option>
+    <option value="BRL">Real (R$)</option>
+  </select>
+
+  <input id="p-estoque" type="number" placeholder="Estoque inicial" min="0">
+
+  <button onclick="addProduto()">Salvar Produto</button>
+</div>
+
+<!-- LISTA PRODUTOS -->
+<div class="card">
+  <div class="section-header" onclick="toggleSection('lista-produtos-wrap')">
+    <h3>📋 Lista de Produtos <span id="count-produtos" class="count-badge"></span></h3>
+    <span class="chevron" id="chevron-lista-produtos-wrap">▼</span>
+  </div>
+  <div id="lista-produtos-wrap" class="section-body">
+    <div id="lista-produtos"></div>
+  </div>
+</div>
+
+<!-- RESUMO PRODUTOS -->
+<div class="card highlight">
+  <h3>📦 Investimento em Produtos</h3>
+  <p id="total-produtos">€ 0</p>
+</div>
 
     <!-- HISTÓRICO -->
     <div class="card">
