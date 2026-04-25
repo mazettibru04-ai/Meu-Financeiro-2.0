@@ -93,12 +93,21 @@ function hojeISO() {
 // =====================
 // CÂMBIO
 // =====================
+import { setRates } from "./services/currencyService.js";
+
 async function pegarCambio() {
   try {
     const res  = await fetch("https://api.exchangerate-api.com/v4/latest/EUR");
     const data = await res.json();
-    taxa = data?.rates?.BRL || 0;
-    document.getElementById("cambio").innerText = `€1 = R$ ${fmt(taxa)}`;
+
+    setRates(data.rates);
+
+    const brl = data.rates?.BRL || 0;
+    const usd = data.rates?.USD || 0;
+
+    document.getElementById("cambio").innerText =
+      `€1 = R$ ${brl.toFixed(2)} | $${usd.toFixed(2)}`;
+
   } catch {
     document.getElementById("cambio").innerText = "Erro ao carregar câmbio";
   }
