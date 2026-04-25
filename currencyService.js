@@ -1,20 +1,41 @@
 // =====================
 // currencyService.js
-// Responsável por TODA conversão de moeda
+// Responsável por TODA conversão de moeda (MULTI-MOEDA)
 // =====================
 
-export function toEUR(valor, moeda, taxa) {
+let rates = {
+  EUR: 1
+};
+
+// Atualiza taxas (base EUR)
+export function setRates(newRates) {
+  rates = {
+    EUR: 1,
+    ...newRates
+  };
+}
+
+// Converter QUALQUER moeda para EUR
+export function toEUR(valor, moeda) {
   if (!valor) return 0;
-  if (moeda === "EUR") return Number(valor);
-  if (moeda === "BRL" && taxa > 0) return Number(valor) / taxa;
-  return Number(valor);
+  if (!rates[moeda]) return Number(valor);
+  return Number(valor) / rates[moeda];
 }
 
-export function toBRL(valorEUR, taxa) {
-  if (!valorEUR || taxa <= 0) return 0;
-  return Number(valorEUR) * taxa;
+// Converter EUR para qualquer moeda
+export function fromEUR(valorEUR, moeda) {
+  if (!valorEUR) return 0;
+  if (!rates[moeda]) return Number(valorEUR);
+  return Number(valorEUR) * rates[moeda];
 }
 
+// Converter direto entre moedas
+export function convert(valor, de, para) {
+  const eur = toEUR(valor, de);
+  return fromEUR(eur, para);
+}
+
+// Formatador padrão
 export function format(valor) {
   return Number(valor).toLocaleString("pt-BR", {
     minimumFractionDigits: 2,
