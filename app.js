@@ -10,7 +10,7 @@
  * NUNCA acesse o Firestore diretamente — use sempre getCol() e getDoc().
  */
 
-import { toEUR, fromEUR, convert, format as formatCurrency } from "./services/currencyService.js";
+import { toEUR, fromEUR, convert, format as formatCurrency, setRates } from "./services/currencyService.js";
 import { calcularResumo } from "./core/financeCore.js";
 import { db } from "./firebase.js";
 import {
