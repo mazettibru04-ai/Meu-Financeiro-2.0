@@ -741,18 +741,21 @@ function iniciarStreamProdutos() {
       const descEsc = p.nome.replace(/'/g, "\\'");
 
       html += `
-        <div class="card">
-          <strong>${p.nome}</strong>
-          <p>SKU: ${p.sku}</p>
-          <p>€ ${fmt(p.preco)}</p>
-          <small>Estoque: ${p.estoque}</small>
+  <div class="card">
+    <strong>${p.nome}</strong>
+    <p>SKU: ${p.sku}</p>
+    <p>€ ${fmt(p.preco)}</p>
+    <small>Estoque: ${p.estoque}</small>
 
-          <div class="actions">
-            <button onclick="deletarItem('produtos','${i.id}','${descEsc}')">🗑️ Remover</button>
-          </div>
-        </div>
-      `;
-    });
+    <small style="color:${p.ativo ? '#22c55e' : '#ef4444'}">
+      ${p.ativo ? 'Ativo' : 'Inativo'}
+    </small>
+
+    <div class="actions">
+      <button onclick="deletarItem('produtos','${i.id}','${descEsc}')">🗑️ Remover</button>
+    </div>
+  </div>
+`;
 
     document.getElementById("lista-produtos").innerHTML =
       html || "<p style='color:#94a3b8'>Nenhum produto</p>";
@@ -764,3 +767,25 @@ function iniciarStreamProdutos() {
 
   unsubs.push(u);
 }
+// =====================
+// FILTRO DE PRODUTOS
+// =====================
+window.filtrarProdutos = function () {
+  const filtro = document.getElementById("filtro-produtos").value;
+
+  const cards = document.querySelectorAll("#lista-produtos .card");
+
+  cards.forEach(card => {
+    const ativo = !card.innerHTML.includes("Inativo");
+
+    if (filtro === "todos") {
+      card.style.display = "block";
+    } else if (filtro === "ativos" && ativo) {
+      card.style.display = "block";
+    } else if (filtro === "inativos" && !ativo) {
+      card.style.display = "block";
+    } else {
+      card.style.display = "none";
+    }
+  });
+};
