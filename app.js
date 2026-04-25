@@ -1,5 +1,5 @@
 /**
- * app.js — Meu Financeiro 2.0
+ * app.js - Meu Financeiro 2.0
  * Sistema completo: receitas, despesas, dívidas, histórico, edição, exclusão,
  * modais, progress bar, collapse, câmbio EUR/BRL.
  *
