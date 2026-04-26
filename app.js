@@ -4,38 +4,29 @@
  * modais, progress bar, collapse, câmbio EUR/BRL.
  *
  * ISOLAMENTO POR USUÁRIO:
- *   Todos os caminhos usam getCol() e getDoc() que injetam window.userId.
+ *   Todos os caminhos usam getUserCollection() e getUserDoc() que injetam window.userId.
  *   O userId é definido pelo auth.js via onAuthStateChanged.
  *
- * NUNCA acesse o Firestore diretamente — use sempre getCol() e getDoc().
+ * NUNCA acesse o Firestore diretamente — use sempre getUserCollection() e getUserDoc().
  */
 
-import { db } from "./firebase.js";
 import {
-  collection,
   addDoc,
   deleteDoc,
   updateDoc,
-  doc,
   onSnapshot,
   orderBy,
   query,
   limit
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { getUserCollection, getUserDoc } from "./modules/firestorePaths.js";
+import { fetchCambioSummary } from "./modules/cambioService.js";
+import { escapeHtml, runSafely } from "./modules/security.js";
 
 // =====================
 // HELPERS DE CAMINHO
-// Toda operação Firestore passa por aqui.
+// Toda operação Firestore passa por getUserCollection/getUserDoc.
 // =====================
-function getCol(nome) {
-  if (!window.userId) { console.warn("getCol: userId não definido"); return null; }
-  return collection(db, "usuarios", window.userId, nome);
-}
-
-function getDoc(nome, id) {
-  if (!window.userId) { console.warn("getDoc: userId não definido"); return null; }
-  return doc(db, "usuarios", window.userId, nome, id);
-}
 
 // =====================
 // CACHE GLOBAL
@@ -93,12 +84,34 @@ function hojeISO() {
 // =====================
 async function pegarCambio() {
   try {
-    const res  = await fetch("https://api.exchangerate-api.com/v4/latest/EUR");
-    const data = await res.json();
-    taxa = data?.rates?.BRL || 0;
-    document.getElementById("cambio").innerText = `€1 = R$ ${fmt(taxa)}`;
+    const { today, history } = await fetchCambioSummary();
+    taxa = today;
+
+    const cambioEl = document.getElementById("cambio");
+    const d7El = document.getElementById("cambio-7d");
+    const d15El = document.getElementById("cambio-15d");
+    const d30El = document.getElementById("cambio-30d");
+    const tendenciaEl = document.getElementById("cambio-tendencia");
+
+    cambioEl.innerText = `Hoje: €1 = R$ ${fmt(today)}`;
+    d7El.innerText = `7 dias atrás: €1 = R$ ${fmt(history.d7)}`;
+    d15El.innerText = `15 dias atrás: €1 = R$ ${fmt(history.d15)}`;
+    d30El.innerText = `30 dias atrás: €1 = R$ ${fmt(history.d30)}`;
+
+    const diff = today - history.d7;
+    if (diff > 0) {
+      tendenciaEl.innerHTML = `Tendência: <span class="trend-up">↑ em alta</span>`;
+    } else if (diff < 0) {
+      tendenciaEl.innerHTML = `Tendência: <span class="trend-down">↓ em queda</span>`;
+    } else {
+      tendenciaEl.innerHTML = `Tendência: <span class="trend-flat">→ estável</span>`;
+    }
   } catch {
     document.getElementById("cambio").innerText = "Erro ao carregar câmbio";
+    document.getElementById("cambio-7d").innerText = "7 dias atrás: indisponível";
+    document.getElementById("cambio-15d").innerText = "15 dias atrás: indisponível";
+    document.getElementById("cambio-30d").innerText = "30 dias atrás: indisponível";
+    document.getElementById("cambio-tendencia").innerText = "Tendência: indisponível";
   }
 }
 
@@ -153,7 +166,7 @@ function atualizarGrafico() {
 // HISTÓRICO
 // =====================
 async function registrarHistorico(acao, desc, valor, moeda) {
-  const ref = getCol("historico");
+  const ref = getUserCollection("historico");
   if (!ref) return;
   try {
     await addDoc(ref, { acao, desc, valor: String(valor), moeda, criadoEm: Date.now() });
@@ -163,7 +176,7 @@ async function registrarHistorico(acao, desc, valor, moeda) {
 }
 
 function iniciarStreamHistorico() {
-  const ref = getCol("historico");
+  const ref = getUserCollection("historico");
   if (!ref) return;
 
   const q = query(ref, orderBy("criadoEm", "desc"), limit(30));
@@ -178,14 +191,15 @@ function iniciarStreamHistorico() {
     snap.forEach((i) => {
       const h    = i.data();
       const hora = new Date(h.criadoEm).toLocaleString("pt-BR");
-      const icone = h.acao.split(" ")[0];
-      const texto = h.acao.replace(/^\S+\s/, "");
+      const icone = escapeHtml(h.acao.split(" ")[0]);
+      const texto = escapeHtml(h.acao.replace(/^\S+\s/, ""));
+      const desc = escapeHtml(h.desc);
       html += `
         <div class="historico-item">
           <div class="historico-icon">${icone}</div>
           <div class="historico-info">
-            <div class="historico-acao">${texto} — ${h.desc}</div>
-            <div class="historico-detalhe">${h.moeda !== "-" ? `${h.moeda} ${h.valor}` : ""} · ${hora}</div>
+            <div class="historico-acao">${texto} — ${desc}</div>
+            <div class="historico-detalhe">${h.moeda !== "-" ? `${escapeHtml(h.moeda)} ${escapeHtml(h.valor)}` : ""} · ${hora}</div>
           </div>
         </div>`;
     });
@@ -295,15 +309,17 @@ window.confirmarPagamento = async function() {
   if (novoPago > total)
     return alert(`Máximo a pagar: ${data.moeda} ${fmt(total - pagoAtual)}`);
 
-  const ref = getDoc("dividas", modalDividaId);
+  const ref = getUserDoc("dividas", modalDividaId);
   if (!ref) return;
 
-  await updateDoc(ref, { pago: novoPago });
-  await registrarHistorico("💸 Pagamento realizado", data.desc, valorPagar, data.moeda);
+  await runSafely(async () => {
+    await updateDoc(ref, { pago: novoPago });
+    await registrarHistorico("💸 Pagamento realizado", data.desc, valorPagar, data.moeda);
 
-  // Atualiza cache e recarrega modal com novos valores
-  guardar(modalDividaId, { ...data, pago: novoPago });
-  abrirModalPagamento(modalDividaId);
+    // Atualiza cache e recarrega modal com novos valores
+    guardar(modalDividaId, { ...data, pago: novoPago });
+    abrirModalPagamento(modalDividaId);
+  }, "Falha ao registrar pagamento");
 };
 
 // =====================
@@ -341,14 +357,16 @@ window.salvarCorrecao = async function() {
     `Depois: ${data.moeda} ${fmt(novoValor)}`
   )) return;
 
-  const ref = getDoc("dividas", corrigirDividaId);
+  const ref = getUserDoc("dividas", corrigirDividaId);
   if (!ref) return;
 
-  await updateDoc(ref, { pago: novoValor });
-  await registrarHistorico("🔧 Pagamento corrigido", data.desc, novoValor, data.moeda);
+  await runSafely(async () => {
+    await updateDoc(ref, { pago: novoValor });
+    await registrarHistorico("🔧 Pagamento corrigido", data.desc, novoValor, data.moeda);
 
-  guardar(corrigirDividaId, { ...data, pago: novoValor });
-  fecharModal("modal-corrigir");
+    guardar(corrigirDividaId, { ...data, pago: novoValor });
+    fecharModal("modal-corrigir");
+  }, "Falha ao corrigir pagamento");
 };
 
 // =====================
@@ -399,13 +417,14 @@ window.salvarEdicao = async function() {
   if (!desc || val <= 0) return alert("Preencha todos os campos corretamente");
   if (!confirm(`Confirmar alteração de "${desc}"?`)) return;
 
-  const ref = getDoc(editColecao, editId);
+  const ref = getUserDoc(editColecao, editId);
   if (!ref) return;
 
-  await updateDoc(ref, { desc, val, moeda, categoria: cat });
-  await registrarHistorico("✏️ Lançamento editado", desc, val, moeda);
-
-  fecharModal("modal-edicao");
+  await runSafely(async () => {
+    await updateDoc(ref, { desc, val, moeda, categoria: cat });
+    await registrarHistorico("✏️ Lançamento editado", desc, val, moeda);
+    fecharModal("modal-edicao");
+  }, "Falha ao salvar edição");
 };
 
 // =====================
@@ -414,21 +433,23 @@ window.salvarEdicao = async function() {
 window.deletarItem = async function(colecao, id, desc) {
   if (!confirm(`Remover "${desc}"?\n\nEssa ação não pode ser desfeita.`)) return;
 
-  const ref = getDoc(colecao, id);
+  const ref = getUserDoc(colecao, id);
   if (!ref) return;
 
-  await deleteDoc(ref);
-  await registrarHistorico(
-    `🗑️ ${colecao === "receitas" ? "Receita" : colecao === "despesas" ? "Despesa" : "Dívida"} removida`,
-    desc, "-", "-"
-  );
+  await runSafely(async () => {
+    await deleteDoc(ref);
+    await registrarHistorico(
+      `🗑️ ${colecao === "receitas" ? "Receita" : colecao === "despesas" ? "Despesa" : "Dívida"} removida`,
+      desc, "-", "-"
+    );
+  }, "Falha ao remover item");
 };
 
 // =====================
 // ADD RECEITA
 // =====================
 window.addReceita = async function() {
-  const ref = getCol("receitas");
+  const ref = getUserCollection("receitas");
   if (!ref) return alert("Faça login primeiro");
 
   const desc  = document.getElementById("r-desc").value.trim();
@@ -438,18 +459,19 @@ window.addReceita = async function() {
 
   if (!desc || val <= 0) return alert("Preencha corretamente");
 
-  await addDoc(ref, { desc, categoria: cat, val, moeda, criadoEm: Date.now() });
-  await registrarHistorico("➕ Receita adicionada", desc, val, moeda);
-
-  document.getElementById("r-desc").value = "";
-  document.getElementById("r-val").value  = "";
+  await runSafely(async () => {
+    await addDoc(ref, { desc, categoria: cat, val, moeda, criadoEm: Date.now() });
+    await registrarHistorico("➕ Receita adicionada", desc, val, moeda);
+    document.getElementById("r-desc").value = "";
+    document.getElementById("r-val").value  = "";
+  }, "Falha ao salvar receita");
 };
 
 // =====================
 // ADD DESPESA
 // =====================
 window.addDespesa = async function() {
-  const ref = getCol("despesas");
+  const ref = getUserCollection("despesas");
   if (!ref) return alert("Faça login primeiro");
 
   const desc  = document.getElementById("d-desc").value.trim();
@@ -459,18 +481,19 @@ window.addDespesa = async function() {
 
   if (!desc || val <= 0) return alert("Preencha corretamente");
 
-  await addDoc(ref, { desc, categoria: cat, val, moeda, criadoEm: Date.now() });
-  await registrarHistorico("➖ Despesa adicionada", desc, val, moeda);
-
-  document.getElementById("d-desc").value = "";
-  document.getElementById("d-val").value  = "";
+  await runSafely(async () => {
+    await addDoc(ref, { desc, categoria: cat, val, moeda, criadoEm: Date.now() });
+    await registrarHistorico("➖ Despesa adicionada", desc, val, moeda);
+    document.getElementById("d-desc").value = "";
+    document.getElementById("d-val").value  = "";
+  }, "Falha ao salvar despesa");
 };
 
 // =====================
 // ADD DÍVIDA
 // =====================
 window.addDivida = async function() {
-  const ref = getCol("dividas");
+  const ref = getUserCollection("dividas");
   if (!ref) return alert("Faça login primeiro");
 
   const desc  = document.getElementById("div-desc").value.trim();
@@ -479,18 +502,19 @@ window.addDivida = async function() {
 
   if (!desc || valor <= 0) return alert("Preencha corretamente");
 
-  await addDoc(ref, { desc, valorOriginal: valor, moeda, pago: 0, criadoEm: Date.now() });
-  await registrarHistorico("💳 Dívida adicionada", desc, valor, moeda);
-
-  document.getElementById("div-desc").value  = "";
-  document.getElementById("div-valor").value = "";
+  await runSafely(async () => {
+    await addDoc(ref, { desc, valorOriginal: valor, moeda, pago: 0, criadoEm: Date.now() });
+    await registrarHistorico("💳 Dívida adicionada", desc, valor, moeda);
+    document.getElementById("div-desc").value  = "";
+    document.getElementById("div-valor").value = "";
+  }, "Falha ao salvar dívida");
 };
 
 // =====================
 // STREAM RECEITAS
 // =====================
 function iniciarStreamReceitas() {
-  const ref = getCol("receitas");
+  const ref = getUserCollection("receitas");
   if (!ref) return;
 
   const q = query(ref, orderBy("criadoEm", "desc"));
@@ -505,12 +529,15 @@ function iniciarStreamReceitas() {
       guardar(i.id, r);
 
       const descEsc = r.desc.replace(/'/g, "\\'");
+      const safeDesc = escapeHtml(r.desc);
+      const safeCategoria = escapeHtml(r.categoria);
+      const safeMoeda = escapeHtml(r.moeda);
 
       html += `
         <div class="card">
-          <strong>${r.desc}</strong>
-          <p>${r.categoria}</p>
-          <p>${r.moeda} ${fmt(r.val)}</p>
+          <strong>${safeDesc}</strong>
+          <p>${safeCategoria}</p>
+          <p>${safeMoeda} ${fmt(r.val)}</p>
           <small>€ ${fmt(v)}</small>
           <div class="actions">
             <button class="btn-editar" onclick="abrirModalEdicao('receitas','${i.id}')">✏️ Editar</button>
@@ -533,7 +560,7 @@ function iniciarStreamReceitas() {
 // STREAM DESPESAS
 // =====================
 function iniciarStreamDespesas() {
-  const ref = getCol("despesas");
+  const ref = getUserCollection("despesas");
   if (!ref) return;
 
   const q = query(ref, orderBy("criadoEm", "desc"));
@@ -548,12 +575,15 @@ function iniciarStreamDespesas() {
       guardar(i.id, d);
 
       const descEsc = d.desc.replace(/'/g, "\\'");
+      const safeDesc = escapeHtml(d.desc);
+      const safeCategoria = escapeHtml(d.categoria);
+      const safeMoeda = escapeHtml(d.moeda);
 
       html += `
         <div class="card">
-          <strong>${d.desc}</strong>
-          <p>${d.categoria}</p>
-          <p>${d.moeda} ${fmt(d.val)}</p>
+          <strong>${safeDesc}</strong>
+          <p>${safeCategoria}</p>
+          <p>${safeMoeda} ${fmt(d.val)}</p>
           <small>€ ${fmt(v)}</small>
           <div class="actions">
             <button class="btn-editar" onclick="abrirModalEdicao('despesas','${i.id}')">✏️ Editar</button>
@@ -576,7 +606,7 @@ function iniciarStreamDespesas() {
 // STREAM DÍVIDAS
 // =====================
 function iniciarStreamDividas() {
-  const ref = getCol("dividas");
+  const ref = getUserCollection("dividas");
   if (!ref) return;
 
   const q = query(ref, orderBy("criadoEm", "desc"));
@@ -602,14 +632,16 @@ function iniciarStreamDividas() {
         : "";
 
       const descEsc = d.desc.replace(/'/g, "\\'");
+      const safeDesc = escapeHtml(d.desc);
+      const safeMoeda = escapeHtml(d.moeda);
 
       html += `
         <div class="card ${quitada ? "pago-total" : ""}">
           <strong>
-            ${d.desc}
+            ${safeDesc}
             ${quitada ? '<span class="badge-pago">✅ Quitada</span>' : ""}
           </strong>
-          <p>${d.moeda} ${fmt(d.valorOriginal)} · Pago: ${d.moeda} ${fmt(d.pago || 0)}</p>
+          <p>${safeMoeda} ${fmt(d.valorOriginal)} · Pago: ${safeMoeda} ${fmt(d.pago || 0)}</p>
           <small>€ ${fmt(totalEUR)} total · Resta € ${fmt(restaEUR)}</small>
           ${brlLine}
 

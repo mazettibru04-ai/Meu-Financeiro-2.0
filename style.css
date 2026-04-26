@@ -22,6 +22,28 @@ body {
 
 .container { max-width: 700px; margin: auto; padding: 20px; }
 
+.top-menu {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.top-menu a {
+  text-decoration: none;
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 700;
+  padding: 8px 10px;
+  border-radius: 999px;
+  background: rgba(56,189,248,0.12);
+  border: 1px solid rgba(56,189,248,0.24);
+}
+
+.top-menu a:hover {
+  background: rgba(56,189,248,0.2);
+}
+
 h1 {
   font-family: 'Syne', sans-serif;
   text-align: center;
@@ -51,6 +73,16 @@ h3 {
 .card .card:hover { transform: none; }
 
 .highlight { border: 1px solid #38bdf8; background: rgba(56,189,248,0.05); }
+
+.cambio-details {
+  margin-top: 8px;
+  border-top: 1px solid rgba(255,255,255,0.08);
+  padding-top: 8px;
+}
+
+.trend-up { color: #ef4444; font-weight: 700; }
+.trend-down { color: #22c55e; font-weight: 700; }
+.trend-flat { color: #94a3b8; font-weight: 700; }
 
 .card.pago-total {
   border-color: rgba(34,197,94,0.4);

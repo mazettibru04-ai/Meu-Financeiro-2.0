@@ -113,14 +113,29 @@
 
     <h1>💰 Meu Financeiro 2.0</h1>
 
+    <nav class="top-menu">
+      <a href="#sec-cambio">Câmbio</a>
+      <a href="#sec-resumo">Resumo</a>
+      <a href="#sec-receitas">Receitas</a>
+      <a href="#sec-despesas">Despesas</a>
+      <a href="#sec-dividas">Dívidas</a>
+      <a href="#sec-historico">Histórico</a>
+    </nav>
+
     <!-- CÂMBIO -->
-    <div class="card highlight">
+    <div id="sec-cambio" class="card highlight">
       <h3>💱 Câmbio atual</h3>
       <p id="cambio">Carregando...</p>
+      <div id="cambio-details" class="cambio-details">
+        <p id="cambio-7d">7 dias atrás: ...</p>
+        <p id="cambio-15d">15 dias atrás: ...</p>
+        <p id="cambio-30d">30 dias atrás: ...</p>
+        <p id="cambio-tendencia">Tendência: ...</p>
+      </div>
     </div>
 
     <!-- RESUMO -->
-    <div class="card">
+    <div id="sec-resumo" class="card">
       <h3>📊 Resumo financeiro</h3>
       <p id="total-receitas">Receitas: €0</p>
       <p id="total-despesas">Despesas: €0</p>
@@ -137,7 +152,7 @@
     </div>
 
     <!-- NOVA RECEITA -->
-    <div class="card">
+    <div id="sec-receitas" class="card">
       <h3>➕ Nova Receita</h3>
       <input id="r-desc" placeholder="Descrição">
       <select id="r-cat">
@@ -166,7 +181,7 @@
     </div>
 
     <!-- NOVA DESPESA -->
-    <div class="card">
+    <div id="sec-despesas" class="card">
       <h3>➖ Nova Despesa</h3>
       <input id="d-desc" placeholder="Descrição">
       <select id="d-cat">
@@ -197,7 +212,7 @@
     </div>
 
     <!-- NOVA DÍVIDA -->
-    <div class="card">
+    <div id="sec-dividas" class="card">
       <h3>💳 Nova Dívida</h3>
       <input id="div-desc" placeholder="Ex: Cartão Nubank">
       <input id="div-valor" type="number" placeholder="Valor total" min="0">
@@ -220,7 +235,7 @@
     </div>
 
     <!-- HISTÓRICO -->
-    <div class="card">
+    <div id="sec-historico" class="card">
       <div class="section-header" onclick="toggleSection('historico-wrap')">
         <h3>📜 Histórico de alterações</h3>
         <span class="chevron collapsed" id="chevron-historico-wrap">▶</span>
