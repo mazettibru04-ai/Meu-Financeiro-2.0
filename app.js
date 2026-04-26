@@ -94,6 +94,8 @@ async function pegarCambio() {
     const data = await res.json();
 
     setRates(data.rates);
+    
+    window.__rates = data.rates;
 
     const brl = data.rates?.BRL || 0;
     const usd = data.rates?.USD || 0;
@@ -104,6 +106,45 @@ async function pegarCambio() {
   } catch {
     document.getElementById("cambio").innerText = "Erro ao carregar câmbio";
   }
+}
+
+// =====================
+// 💱 TAXA DO DIA (REAL)
+// =====================
+function getTaxaHoje(moeda) {
+  if (!window.__rates) return 0;
+
+  if (moeda === "EUR") return 1;
+
+  if (moeda === "BRL") {
+    return window.__rates.BRL || 0;
+  }
+
+  return 1;
+}
+
+// =====================
+// 💱 FUNÇÃO DE CÁLCULO AUTOMÁTICO
+// =====================
+function calcularEuroHoje(valor, moeda) {
+  const taxa = getTaxaHoje(moeda);
+
+  if (!taxa) return {
+    taxa: 0,
+    valorEUR: Number(valor)
+  };
+
+  if (moeda === "EUR") {
+    return {
+      taxa: 1,
+      valorEUR: Number(valor)
+    };
+  }
+
+  return {
+    taxa,
+    valorEUR: Number(valor) / taxa
+  };
 }
 
 // =====================
@@ -254,7 +295,9 @@ window.abrirModalPagamento = function(id) {
   modalDividaId = id;
 
   const totalEUR = eur(data.valorOriginal, data.moeda);
-  const pagoEUR  = eur(data.pago || 0, data.moeda);
+  const taxa = data.taxaCambio || getTaxaHoje(data.moeda);
+  const totalEUR = data.valorEUR ?? (data.valorOriginal / taxa);
+  const pagoEUR  = (data.pago || 0) / taxa;
   const restaEUR = Math.max(0, totalEUR - pagoEUR);
   const pct      = Math.min(100, totalEUR > 0 ? Math.round((pagoEUR / totalEUR) * 100) : 0);
 
@@ -442,7 +485,21 @@ window.addReceita = async function() {
 
   if (!desc || val <= 0) return alert("Preencha corretamente");
 
-  await addDoc(ref, { desc, categoria: cat, val, moeda, criadoEm: Date.now() });
+  const cambio = calcularEuroHoje(val, moeda);
+
+await addDoc(ref, {
+  desc,
+  categoria: cat,
+  val,
+  moeda,
+
+  // 💱 NOVO (PROFISSIONAL)
+  taxaCambio: cambio.taxa,
+  valorEUR: cambio.valorEUR,
+
+  criadoEm: Date.now()
+});
+  
   await registrarHistorico("➕ Receita adicionada", desc, val, moeda);
 
   document.getElementById("r-desc").value = "";
@@ -463,7 +520,21 @@ window.addDespesa = async function() {
 
   if (!desc || val <= 0) return alert("Preencha corretamente");
 
-  await addDoc(ref, { desc, categoria: cat, val, moeda, criadoEm: Date.now() });
+  const cambio = calcularEuroHoje(val, moeda);
+
+await addDoc(ref, {
+  desc,
+  categoria: cat,
+  val,
+  moeda,
+
+  // 💱 PROFISSIONAL
+  taxaCambio: cambio.taxa,
+  valorEUR: cambio.valorEUR,
+
+  criadoEm: Date.now()
+});
+  
   await registrarHistorico("➖ Despesa adicionada", desc, val, moeda);
 
   document.getElementById("d-desc").value = "";
@@ -483,7 +554,21 @@ window.addDivida = async function() {
 
   if (!desc || valor <= 0) return alert("Preencha corretamente");
 
-  await addDoc(ref, { desc, valorOriginal: valor, moeda, pago: 0, criadoEm: Date.now() });
+  const cambio = calcularEuroHoje(valor, moeda);
+
+await addDoc(ref, {
+  desc,
+  valorOriginal: valor,
+  moeda,
+  pago: 0,
+
+  // 💱 PROFISSIONAL
+  taxaCambio: cambio.taxa,
+  valorEUR: cambio.valorEUR,
+
+  criadoEm: Date.now()
+});
+  
   await registrarHistorico("💳 Dívida adicionada", desc, valor, moeda);
 
   document.getElementById("div-desc").value  = "";
@@ -547,7 +632,7 @@ function iniciarStreamDespesas() {
 
     snap.forEach((i) => {
       const d = i.data();
-      const v = toEUR(d.val, d.moeda);
+      const v = d.valorEUR ?? toEUR(d.val, d.moeda);
       totalDespesas += v;
       guardar(i.id, d);
 
@@ -590,7 +675,7 @@ function iniciarStreamDividas() {
 
     snap.forEach((i) => {
       const d        = i.data();
-      const totalEUR = eur(d.valorOriginal, d.moeda);
+      const totalEUR = d.valorEUR ?? eur(d.valorOriginal, d.moeda);
       const pagoEUR  = eur(d.pago || 0, d.moeda);
       const restaEUR = Math.max(0, totalEUR - pagoEUR);
       const quitada  = pagoEUR >= totalEUR && totalEUR > 0;
