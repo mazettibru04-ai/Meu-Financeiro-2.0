@@ -294,9 +294,17 @@ window.abrirModalPagamento = function(id) {
   if (!data) return;
   modalDividaId = id;
 
-  const totalEUR = eur(data.valorOriginal, data.moeda);
   const taxa = data.taxaCambio || getTaxaHoje(data.moeda);
-  const totalEUR = data.valorEUR ?? (data.valorOriginal / taxa);
+
+const totalEUR = data.valorEUR ?? (
+  data.moeda === "EUR"
+    ? Number(data.valorOriginal)
+    : Number(data.valorOriginal) / taxa
+);
+
+const pagoEUR = data.moeda === "EUR"
+  ? Number(data.pago || 0)
+  : Number(data.pago || 0) / taxa;
   const pagoEUR  = (data.pago || 0) / taxa;
   const restaEUR = Math.max(0, totalEUR - pagoEUR);
   const pct      = Math.min(100, totalEUR > 0 ? Math.round((pagoEUR / totalEUR) * 100) : 0);
@@ -589,7 +597,7 @@ function iniciarStreamReceitas() {
 
     snap.forEach((i) => {
       const r = i.data();
-      const v = toEUR(r.val, r.moeda);
+      const v = r.valorEUR ?? toEUR(r.val, r.moeda);
       totalReceitas += v;
       guardar(i.id, r);
 
