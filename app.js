@@ -367,20 +367,16 @@ window.confirmarPagamento = async function() {
 
   // 💱 conversão segura (SEM usar variáveis inexistentes)
   if (moedaPagamento !== data.moeda) {
-    const taxaBRL = window.__rates?.BRL;
+  const taxa = getTaxaHoje(data.moeda);
 
-    if (!taxaBRL) {
-      return alert("Erro ao obter taxa de câmbio");
-    }
-
-    if (moedaPagamento === "EUR" && data.moeda === "BRL") {
-      valorConvertido = valorInput * taxaBRL;
-    }
-
-    if (moedaPagamento === "BRL" && data.moeda === "EUR") {
-      valorConvertido = valorInput / taxaBRL;
-    }
+  if (moedaPagamento === "EUR" && data.moeda === "BRL") {
+    valorConvertido = valorInput * taxa;
   }
+
+  if (moedaPagamento === "BRL" && data.moeda === "EUR") {
+    valorConvertido = valorInput / taxa;
+  }
+}
 
   const pagoAtual = Number(data.pago) || 0;
   const novoPago  = pagoAtual + valorConvertido;
