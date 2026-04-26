@@ -211,12 +211,6 @@ function iniciarStreamHistorico() {
   const ref = getCol("historico");
   if (!ref) return;
   
-  await registrarHistorico(
-  "💸 Pagamento realizado",
-  data.desc,
-  valorInput,
-  moedaPagamento
-);
   const q = query(ref, orderBy("criadoEm", "desc"), limit(30));
   const u = onSnapshot(q, (snap) => {
     if (snap.empty) {
@@ -307,11 +301,6 @@ window.abrirModalPagamento = function(id) {
       ? Number(data.valorOriginal)
       : Number(data.valorOriginal) / taxa
   );
-  
-<select id="modal-moeda-pagamento">
-  <option value="EUR">EUR</option>
-  <option value="BRL">BRL</option>
-</select>
 
   const pagoEUR = data.moeda === "EUR"
     ? Number(data.pago || 0)
@@ -362,6 +351,13 @@ const moedaPagamento = document.getElementById("modal-moeda-pagamento").value;
 
 if (!valorInput || valorInput <= 0) return alert("Informe um valor válido");
 
+  await registrarHistorico(
+  "💸 Pagamento realizado",
+  data.desc,
+  valorInput,
+  moedaPagamento
+);
+  
 // Converter pagamento para moeda da dívida
 let valorConvertido = valorInput;
 
