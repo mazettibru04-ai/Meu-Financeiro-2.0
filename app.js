@@ -10,8 +10,6 @@
  * NUNCA acesse o Firestore diretamente — use sempre getCol() e getDoc().
  */
 
-import { toEUR, fromEUR, convert, format as formatCurrency, setRates } from "./services/currencyService.js";
-import { calcularResumo } from "./core/financeCore.js";
 import { db } from "./firebase.js";
 import {
   collection,
@@ -69,6 +67,12 @@ let chart;
 // =====================
 // UTILS
 // =====================
+function fmt(valor) {
+  return Number(valor).toLocaleString("pt-BR", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  });
+}
 
 function eur(v, m) {
   if (m === "EUR") return Number(v);
@@ -87,20 +91,12 @@ function hojeISO() {
 // =====================
 // CÂMBIO
 // =====================
-
 async function pegarCambio() {
   try {
     const res  = await fetch("https://api.exchangerate-api.com/v4/latest/EUR");
     const data = await res.json();
-
-    setRates(data.rates);
-
-    const brl = data.rates?.BRL || 0;
-    const usd = data.rates?.USD || 0;
-
-    document.getElementById("cambio").innerText =
-      `€1 = R$ ${brl.toFixed(2)} | $${usd.toFixed(2)}`;
-
+    taxa = data?.rates?.BRL || 0;
+    document.getElementById("cambio").innerText = `€1 = R$ ${fmt(taxa)}`;
   } catch {
     document.getElementById("cambio").innerText = "Erro ao carregar câmbio";
   }
@@ -113,11 +109,11 @@ function atualizarResumo() {
   const saldo     = totalReceitas - totalDespesas;
   const saldoReal = saldo - totalDividas;
 
-  document.getElementById("total-receitas").innerText = `Receitas: € ${formatCurrency(totalReceitas)}`;
-  document.getElementById("total-despesas").innerText = `Despesas: € ${formatCurrency(totalDespesas)}`;
-  document.getElementById("total-dividas").innerText  = `Dívidas: € ${formatCurrency(totalDividas)}`;
-  document.getElementById("saldo").innerText          = `Saldo: € ${formatCurrency(saldo)}`;
-  document.getElementById("saldo-real").innerText     = `Saldo real (com dívidas): € ${formatCurrency(saldoReal)}`;
+  document.getElementById("total-receitas").innerText = `Receitas: € ${fmt(totalReceitas)}`;
+  document.getElementById("total-despesas").innerText = `Despesas: € ${fmt(totalDespesas)}`;
+  document.getElementById("total-dividas").innerText  = `Dívidas: € ${fmt(totalDividas)}`;
+  document.getElementById("saldo").innerText          = `Saldo: € ${fmt(saldo)}`;
+  document.getElementById("saldo-real").innerText     = `Saldo real (com dívidas): € ${fmt(saldoReal)}`;
 
   atualizarGrafico();
 }
@@ -259,10 +255,10 @@ window.abrirModalPagamento = function(id) {
   const pct      = Math.min(100, totalEUR > 0 ? Math.round((pagoEUR / totalEUR) * 100) : 0);
 
   document.getElementById("modal-nome").textContent       = data.desc;
-  document.getElementById("modal-moeda-info").textContent = `${data.moeda} ${formatCurrency(data.valorOriginal)}`;
-  document.getElementById("modal-total").textContent      = `€ ${formatCurrency(totalEUR)}`;
-  document.getElementById("modal-pago").textContent       = `€ ${formatCurrency(pagoEUR)}`;
-  document.getElementById("modal-resta").textContent      = `€ ${formatCurrency(restaEUR)}`;
+  document.getElementById("modal-moeda-info").textContent = `${data.moeda} ${fmt(data.valorOriginal)}`;
+  document.getElementById("modal-total").textContent      = `€ ${fmt(totalEUR)}`;
+  document.getElementById("modal-pago").textContent       = `€ ${fmt(pagoEUR)}`;
+  document.getElementById("modal-resta").textContent      = `€ ${fmt(restaEUR)}`;
   document.getElementById("modal-valor-pagar").value      = "";
 
   const circum   = 2 * Math.PI * 60; // r=60 → 377
@@ -297,7 +293,7 @@ window.confirmarPagamento = async function() {
   const total     = Number(data.valorOriginal);
 
   if (novoPago > total)
-    return alert(`Máximo a pagar: ${data.moeda} ${formatCurrency(total - pagoAtual)}`);
+    return alert(`Máximo a pagar: ${data.moeda} ${fmt(total - pagoAtual)}`);
 
   const ref = getDoc("dividas", modalDividaId);
   if (!ref) return;
@@ -319,8 +315,8 @@ window.abrirModalCorrigir = function(id) {
   corrigirDividaId = id;
 
   document.getElementById("corrigir-nome").textContent  = data.desc;
-  document.getElementById("corrigir-total").textContent = `Total: ${data.moeda} ${formatCurrency(data.valorOriginal)}`;
-  document.getElementById("corrigir-atual").textContent = `Pago atual: ${data.moeda} ${formatCurrency(data.pago || 0)}`;
+  document.getElementById("corrigir-total").textContent = `Total: ${data.moeda} ${fmt(data.valorOriginal)}`;
+  document.getElementById("corrigir-atual").textContent = `Pago atual: ${data.moeda} ${fmt(data.pago || 0)}`;
   document.getElementById("corrigir-valor").value       = data.pago || 0;
 
   document.getElementById("modal-corrigir").classList.add("active");
@@ -337,12 +333,12 @@ window.salvarCorrecao = async function() {
   const novoValor = Number(document.getElementById("corrigir-valor").value);
   if (novoValor < 0) return alert("Valor não pode ser negativo");
   if (novoValor > Number(data.valorOriginal))
-    return alert(`Máximo: ${data.moeda} ${formatCurrency(data.valorOriginal)}`);
+    return alert(`Máximo: ${data.moeda} ${fmt(data.valorOriginal)}`);
 
   if (!confirm(
     `Corrigir pagamento de "${data.desc}"?\n` +
-    `Antes: ${data.moeda} ${formatCurrency(data.pago || 0)}\n` +
-    `Depois: ${data.moeda} ${formatCurrency(novoValor)}`
+    `Antes: ${data.moeda} ${fmt(data.pago || 0)}\n` +
+    `Depois: ${data.moeda} ${fmt(novoValor)}`
   )) return;
 
   const ref = getDoc("dividas", corrigirDividaId);
@@ -504,7 +500,7 @@ function iniciarStreamReceitas() {
 
     snap.forEach((i) => {
       const r = i.data();
-      const v = toEUR(r.val, r.moeda);
+      const v = eur(r.val, r.moeda);
       totalReceitas += v;
       guardar(i.id, r);
 
@@ -514,8 +510,8 @@ function iniciarStreamReceitas() {
         <div class="card">
           <strong>${r.desc}</strong>
           <p>${r.categoria}</p>
-          <p>${r.moeda} ${formatCurrency(r.val)}</p>
-          <small>€ ${formatCurrency(v)}</small>
+          <p>${r.moeda} ${fmt(r.val)}</p>
+          <small>€ ${fmt(v)}</small>
           <div class="actions">
             <button class="btn-editar" onclick="abrirModalEdicao('receitas','${i.id}')">✏️ Editar</button>
             <button class="btn-remover" onclick="deletarItem('receitas','${i.id}','${descEsc}')">🗑️ Remover</button>
@@ -547,7 +543,7 @@ function iniciarStreamDespesas() {
 
     snap.forEach((i) => {
       const d = i.data();
-      const v = toEUR(d.val, d.moeda);
+      const v = eur(d.val, d.moeda);
       totalDespesas += v;
       guardar(i.id, d);
 
@@ -557,8 +553,8 @@ function iniciarStreamDespesas() {
         <div class="card">
           <strong>${d.desc}</strong>
           <p>${d.categoria}</p>
-          <p>${d.moeda} ${formatCurrency(d.val)}</p>
-          <small>€ ${formatCurrency(v)}</small>
+          <p>${d.moeda} ${fmt(d.val)}</p>
+          <small>€ ${fmt(v)}</small>
           <div class="actions">
             <button class="btn-editar" onclick="abrirModalEdicao('despesas','${i.id}')">✏️ Editar</button>
             <button class="btn-remover" onclick="deletarItem('despesas','${i.id}','${descEsc}')">🗑️ Remover</button>
@@ -602,7 +598,7 @@ function iniciarStreamDividas() {
       const totalBRL = brl(totalEUR);
       const restaBRL = brl(restaEUR);
       const brlLine  = totalBRL
-        ? `<br><small style="color:#475569">R$ ${formatCurrency(totalBRL)} total · Resta R$ ${formatCurrency(restaBRL || 0)}</small>`
+        ? `<br><small style="color:#475569">R$ ${fmt(totalBRL)} total · Resta R$ ${fmt(restaBRL || 0)}</small>`
         : "";
 
       const descEsc = d.desc.replace(/'/g, "\\'");
@@ -613,8 +609,8 @@ function iniciarStreamDividas() {
             ${d.desc}
             ${quitada ? '<span class="badge-pago">✅ Quitada</span>' : ""}
           </strong>
-          <p>${d.moeda} ${formatCurrency(d.valorOriginal)} · Pago: ${d.moeda} ${formatCurrency(d.pago || 0)}</p>
-          <small>€ ${formatCurrency(totalEUR)} total · Resta € ${formatCurrency(restaEUR)}</small>
+          <p>${d.moeda} ${fmt(d.valorOriginal)} · Pago: ${d.moeda} ${fmt(d.pago || 0)}</p>
+          <small>€ ${fmt(totalEUR)} total · Resta € ${fmt(restaEUR)}</small>
           ${brlLine}
 
           ${renderProgress(pagoEUR, totalEUR)}
