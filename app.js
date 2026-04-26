@@ -134,6 +134,31 @@ function dayLabel(dateKey) {
   return target.toLocaleDateString("pt-BR");
 }
 
+function parseMetaDateTime(meta) {
+  const safeDate = String(meta?.date || "");
+  const safeTime = String(meta?.time || "00:00:00");
+  const parsed = new Date(`${safeDate}T${safeTime}`);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
+function formatDateTimeProfessional(meta) {
+  const parsed = parseMetaDateTime(meta);
+  if (!parsed) return "Data indisponível";
+
+  const data = parsed.toLocaleDateString("pt-BR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric"
+  });
+  const hora = parsed.toLocaleTimeString("pt-BR", {
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit"
+  });
+
+  return `${data} às ${hora}`;
+}
+
 // =====================
 // CÂMBIO
 // =====================
@@ -262,7 +287,7 @@ function iniciarStreamHistorico() {
           <div class="historico-icon">${icone}</div>
           <div class="historico-info">
             <div class="historico-acao">${texto} — ${desc}</div>
-            <div class="historico-detalhe">${h.moeda !== "-" ? `${escapeHtml(h.moeda)} ${escapeHtml(h.valor)}` : ""} · ${escapeHtml(meta.date)} ${escapeHtml(meta.time)}</div>
+            <div class="historico-detalhe">${h.moeda !== "-" ? `${escapeHtml(h.moeda)} ${escapeHtml(h.valor)}` : ""} · ${escapeHtml(formatDateTimeProfessional(meta))}</div>
           </div>
         </div>`;
     });
@@ -603,7 +628,7 @@ function iniciarStreamReceitas() {
           <p>${safeCategoria}</p>
           <p>${safeMoeda} ${fmt(r.val)}</p>
           <small>€ ${fmt(v)}</small>
-          <small>${escapeHtml(meta.date)} ${escapeHtml(meta.time)}</small>
+          <small>${escapeHtml(formatDateTimeProfessional(meta))}</small>
           <div class="actions">
             <button class="btn-editar" onclick="abrirModalEdicao('receitas','${i.id}')">✏️ Editar</button>
             <button class="btn-remover" onclick="deletarItem('receitas','${i.id}','${descEsc}')">🗑️ Remover</button>
@@ -651,7 +676,7 @@ function iniciarStreamDespesas() {
           <p>${safeCategoria}</p>
           <p>${safeMoeda} ${fmt(d.val)}</p>
           <small>€ ${fmt(v)}</small>
-          <small>${escapeHtml(meta.date)} ${escapeHtml(meta.time)}</small>
+          <small>${escapeHtml(formatDateTimeProfessional(meta))}</small>
           <div class="actions">
             <button class="btn-editar" onclick="abrirModalEdicao('despesas','${i.id}')">✏️ Editar</button>
             <button class="btn-remover" onclick="deletarItem('despesas','${i.id}','${descEsc}')">🗑️ Remover</button>
@@ -711,7 +736,7 @@ function iniciarStreamDividas() {
           </strong>
           <p>${safeMoeda} ${fmt(d.valorOriginal)} · Pago: ${safeMoeda} ${fmt(d.pago || 0)}</p>
           <small>€ ${fmt(totalEUR)} total · Resta € ${fmt(restaEUR)}</small>
-          <small>${escapeHtml(meta.date)} ${escapeHtml(meta.time)}</small>
+          <small>${escapeHtml(formatDateTimeProfessional(meta))}</small>
           ${brlLine}
 
           ${renderProgress(pagoEUR, totalEUR)}
