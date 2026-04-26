@@ -343,55 +343,69 @@ window.abrirModalPagamento = function(id) {
 // =====================
 window.confirmarPagamento = async function() {
   if (!modalDividaId) return;
+
   const data = recuperar(modalDividaId);
   if (!data) return;
 
-  const valorInput = Number(document.getElementById("modal-valor-pagar").value);
-const moedaPagamento = document.getElementById("modal-moeda-pagamento").value;
+  const inputValor = document.getElementById("modal-valor-pagar");
+  const inputMoeda = document.getElementById("modal-moeda-pagamento");
 
-if (!valorInput || valorInput <= 0) return alert("Informe um valor válido");
-
-  await registrarHistorico(
-  "💸 Pagamento realizado",
-  data.desc,
-  valorInput,
-  moedaPagamento
-);
-  
-// Converter pagamento para moeda da dívida
-let valorConvertido = valorInput;
-
-if (moedaPagamento !== data.moeda) {
-  const taxa = convert(valor, de, para); // EUR -> BRL
-
-  if (moedaPagamento === "EUR" && data.moeda === "BRL") {
-    valorConvertido = valorInput * taxa;
+  // 🛡️ proteção contra null (SEGURO)
+  if (!inputValor || !inputMoeda) {
+    console.warn("Inputs do modal não encontrados");
+    return;
   }
 
-  if (moedaPagamento === "BRL" && data.moeda === "EUR") {
-    valorConvertido = valorInput / taxa;
+  const valorInput = Number(inputValor.value);
+  const moedaPagamento = inputMoeda.value;
+
+  if (!valorInput || valorInput <= 0) {
+    return alert("Informe um valor válido");
   }
-}
-  if (!valorPagar || valorPagar <= 0) return alert("Informe um valor válido");
+
+  let valorConvertido = valorInput;
+
+  // 💱 conversão segura (SEM usar variáveis inexistentes)
+  if (moedaPagamento !== data.moeda) {
+    const taxaBRL = window.__rates?.BRL;
+
+    if (!taxaBRL) {
+      return alert("Erro ao obter taxa de câmbio");
+    }
+
+    if (moedaPagamento === "EUR" && data.moeda === "BRL") {
+      valorConvertido = valorInput * taxaBRL;
+    }
+
+    if (moedaPagamento === "BRL" && data.moeda === "EUR") {
+      valorConvertido = valorInput / taxaBRL;
+    }
+  }
 
   const pagoAtual = Number(data.pago) || 0;
   const novoPago  = pagoAtual + valorConvertido;
   const total     = Number(data.valorOriginal);
 
-  if (novoPago > total)
+  if (novoPago > total) {
     return alert(`Máximo a pagar: ${data.moeda} ${formatCurrency(total - pagoAtual)}`);
+  }
 
   const ref = getDoc("dividas", modalDividaId);
   if (!ref) return;
 
   await updateDoc(ref, { pago: novoPago });
-  await registrarHistorico("💸 Pagamento realizado", data.desc, valorPagar, data.moeda);
 
-  // Atualiza cache e recarrega modal com novos valores
+  await registrarHistorico(
+    "💸 Pagamento realizado",
+    data.desc,
+    valorInput,
+    moedaPagamento
+  );
+
   guardar(modalDividaId, { ...data, pago: novoPago });
+
   abrirModalPagamento(modalDividaId);
 };
-
 // =====================
 // MODAL CORRIGIR PAGAMENTO — abrir
 // =====================
