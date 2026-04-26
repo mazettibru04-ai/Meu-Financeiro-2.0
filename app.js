@@ -210,7 +210,13 @@ async function registrarHistorico(acao, desc, valor, moeda) {
 function iniciarStreamHistorico() {
   const ref = getCol("historico");
   if (!ref) return;
-
+  
+  await registrarHistorico(
+  "💸 Pagamento realizado",
+  data.desc,
+  valorInput,
+  moedaPagamento
+);
   const q = query(ref, orderBy("criadoEm", "desc"), limit(30));
   const u = onSnapshot(q, (snap) => {
     if (snap.empty) {
@@ -301,6 +307,11 @@ window.abrirModalPagamento = function(id) {
       ? Number(data.valorOriginal)
       : Number(data.valorOriginal) / taxa
   );
+  
+<select id="modal-moeda-pagamento">
+  <option value="EUR">EUR</option>
+  <option value="BRL">BRL</option>
+</select>
 
   const pagoEUR = data.moeda === "EUR"
     ? Number(data.pago || 0)
@@ -346,11 +357,29 @@ window.confirmarPagamento = async function() {
   const data = recuperar(modalDividaId);
   if (!data) return;
 
-  const valorPagar = Number(document.getElementById("modal-valor-pagar").value);
+  const valorInput = Number(document.getElementById("modal-valor-pagar").value);
+const moedaPagamento = document.getElementById("modal-moeda-pagamento").value;
+
+if (!valorInput || valorInput <= 0) return alert("Informe um valor válido");
+
+// Converter pagamento para moeda da dívida
+let valorConvertido = valorInput;
+
+if (moedaPagamento !== data.moeda) {
+  const taxa = convert(valor, de, para); // EUR -> BRL
+
+  if (moedaPagamento === "EUR" && data.moeda === "BRL") {
+    valorConvertido = valorInput * taxa;
+  }
+
+  if (moedaPagamento === "BRL" && data.moeda === "EUR") {
+    valorConvertido = valorInput / taxa;
+  }
+}
   if (!valorPagar || valorPagar <= 0) return alert("Informe um valor válido");
 
   const pagoAtual = Number(data.pago) || 0;
-  const novoPago  = pagoAtual + valorPagar;
+  const novoPago  = pagoAtual + valorConvertido;
   const total     = Number(data.valorOriginal);
 
   if (novoPago > total)
