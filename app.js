@@ -17,7 +17,8 @@ import {
   onSnapshot,
   orderBy,
   query,
-  limit
+  limit,
+  serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 import { getUserCollection, getUserDoc } from "./modules/firestorePaths.js";
 import { fetchCambioSummary } from "./modules/cambioService.js";
@@ -77,6 +78,60 @@ function brl(valorEur) {
 
 function hojeISO() {
   return new Date().toISOString().slice(0, 10);
+}
+
+function pad2(n) {
+  return String(n).padStart(2, "0");
+}
+
+function buildDateMeta(now = new Date()) {
+  return {
+    createdAt: serverTimestamp(),
+    date: `${now.getFullYear()}-${pad2(now.getMonth() + 1)}-${pad2(now.getDate())}`,
+    time: `${pad2(now.getHours())}:${pad2(now.getMinutes())}:${pad2(now.getSeconds())}`
+  };
+}
+
+function parseDateKey(dateKey) {
+  const [y, m, d] = String(dateKey || "").split("-").map(Number);
+  if (!y || !m || !d) return null;
+  return new Date(y, m - 1, d);
+}
+
+function toDateMeta(data) {
+  if (data?.date && data?.time) return { date: data.date, time: data.time };
+
+  if (Number.isFinite(data?.criadoEm)) {
+    const base = new Date(data.criadoEm);
+    return {
+      date: `${base.getFullYear()}-${pad2(base.getMonth() + 1)}-${pad2(base.getDate())}`,
+      time: `${pad2(base.getHours())}:${pad2(base.getMinutes())}:${pad2(base.getSeconds())}`
+    };
+  }
+
+  const now = new Date();
+  return {
+    date: `${now.getFullYear()}-${pad2(now.getMonth() + 1)}-${pad2(now.getDate())}`,
+    time: `${pad2(now.getHours())}:${pad2(now.getMinutes())}:${pad2(now.getSeconds())}`
+  };
+}
+
+function dayLabel(dateKey) {
+  const date = parseDateKey(dateKey);
+  if (!date) return "Data indisponível";
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const yesterday = new Date(today);
+  yesterday.setDate(yesterday.getDate() - 1);
+
+  const target = new Date(date);
+  target.setHours(0, 0, 0, 0);
+
+  if (target.getTime() === today.getTime()) return "Hoje";
+  if (target.getTime() === yesterday.getTime()) return "Ontem";
+
+  return target.toLocaleDateString("pt-BR");
 }
 
 // =====================
@@ -169,7 +224,7 @@ async function registrarHistorico(acao, desc, valor, moeda) {
   const ref = getUserCollection("historico");
   if (!ref) return;
   try {
-    await addDoc(ref, { acao, desc, valor: String(valor), moeda, criadoEm: Date.now() });
+    await addDoc(ref, { acao, desc, valor: String(valor), moeda, criadoEm: Date.now(), ...buildDateMeta() });
   } catch (e) {
     console.error("Histórico:", e);
   }
@@ -188,18 +243,26 @@ function iniciarStreamHistorico() {
     }
 
     let html = "";
+    let lastDay = null;
     snap.forEach((i) => {
       const h    = i.data();
-      const hora = new Date(h.criadoEm).toLocaleString("pt-BR");
+      const meta = toDateMeta(h);
+      const groupLabel = dayLabel(meta.date);
       const icone = escapeHtml(h.acao.split(" ")[0]);
       const texto = escapeHtml(h.acao.replace(/^\S+\s/, ""));
       const desc = escapeHtml(h.desc);
+
+      if (groupLabel !== lastDay) {
+        html += `<p class="historico-group">${groupLabel}</p>`;
+        lastDay = groupLabel;
+      }
+
       html += `
         <div class="historico-item">
           <div class="historico-icon">${icone}</div>
           <div class="historico-info">
             <div class="historico-acao">${texto} — ${desc}</div>
-            <div class="historico-detalhe">${h.moeda !== "-" ? `${escapeHtml(h.moeda)} ${escapeHtml(h.valor)}` : ""} · ${hora}</div>
+            <div class="historico-detalhe">${h.moeda !== "-" ? `${escapeHtml(h.moeda)} ${escapeHtml(h.valor)}` : ""} · ${escapeHtml(meta.date)} ${escapeHtml(meta.time)}</div>
           </div>
         </div>`;
     });
@@ -460,7 +523,7 @@ window.addReceita = async function() {
   if (!desc || val <= 0) return alert("Preencha corretamente");
 
   await runSafely(async () => {
-    await addDoc(ref, { desc, categoria: cat, val, moeda, criadoEm: Date.now() });
+    await addDoc(ref, { desc, categoria: cat, val, moeda, criadoEm: Date.now(), ...buildDateMeta() });
     await registrarHistorico("➕ Receita adicionada", desc, val, moeda);
     document.getElementById("r-desc").value = "";
     document.getElementById("r-val").value  = "";
@@ -482,7 +545,7 @@ window.addDespesa = async function() {
   if (!desc || val <= 0) return alert("Preencha corretamente");
 
   await runSafely(async () => {
-    await addDoc(ref, { desc, categoria: cat, val, moeda, criadoEm: Date.now() });
+    await addDoc(ref, { desc, categoria: cat, val, moeda, criadoEm: Date.now(), ...buildDateMeta() });
     await registrarHistorico("➖ Despesa adicionada", desc, val, moeda);
     document.getElementById("d-desc").value = "";
     document.getElementById("d-val").value  = "";
@@ -503,7 +566,7 @@ window.addDivida = async function() {
   if (!desc || valor <= 0) return alert("Preencha corretamente");
 
   await runSafely(async () => {
-    await addDoc(ref, { desc, valorOriginal: valor, moeda, pago: 0, criadoEm: Date.now() });
+    await addDoc(ref, { desc, valorOriginal: valor, moeda, pago: 0, criadoEm: Date.now(), ...buildDateMeta() });
     await registrarHistorico("💳 Dívida adicionada", desc, valor, moeda);
     document.getElementById("div-desc").value  = "";
     document.getElementById("div-valor").value = "";
@@ -532,6 +595,7 @@ function iniciarStreamReceitas() {
       const safeDesc = escapeHtml(r.desc);
       const safeCategoria = escapeHtml(r.categoria);
       const safeMoeda = escapeHtml(r.moeda);
+      const meta = toDateMeta(r);
 
       html += `
         <div class="card">
@@ -539,6 +603,7 @@ function iniciarStreamReceitas() {
           <p>${safeCategoria}</p>
           <p>${safeMoeda} ${fmt(r.val)}</p>
           <small>€ ${fmt(v)}</small>
+          <small>${escapeHtml(meta.date)} ${escapeHtml(meta.time)}</small>
           <div class="actions">
             <button class="btn-editar" onclick="abrirModalEdicao('receitas','${i.id}')">✏️ Editar</button>
             <button class="btn-remover" onclick="deletarItem('receitas','${i.id}','${descEsc}')">🗑️ Remover</button>
@@ -578,6 +643,7 @@ function iniciarStreamDespesas() {
       const safeDesc = escapeHtml(d.desc);
       const safeCategoria = escapeHtml(d.categoria);
       const safeMoeda = escapeHtml(d.moeda);
+      const meta = toDateMeta(d);
 
       html += `
         <div class="card">
@@ -585,6 +651,7 @@ function iniciarStreamDespesas() {
           <p>${safeCategoria}</p>
           <p>${safeMoeda} ${fmt(d.val)}</p>
           <small>€ ${fmt(v)}</small>
+          <small>${escapeHtml(meta.date)} ${escapeHtml(meta.time)}</small>
           <div class="actions">
             <button class="btn-editar" onclick="abrirModalEdicao('despesas','${i.id}')">✏️ Editar</button>
             <button class="btn-remover" onclick="deletarItem('despesas','${i.id}','${descEsc}')">🗑️ Remover</button>
@@ -634,6 +701,7 @@ function iniciarStreamDividas() {
       const descEsc = d.desc.replace(/'/g, "\\'");
       const safeDesc = escapeHtml(d.desc);
       const safeMoeda = escapeHtml(d.moeda);
+      const meta = toDateMeta(d);
 
       html += `
         <div class="card ${quitada ? "pago-total" : ""}">
@@ -643,6 +711,7 @@ function iniciarStreamDividas() {
           </strong>
           <p>${safeMoeda} ${fmt(d.valorOriginal)} · Pago: ${safeMoeda} ${fmt(d.pago || 0)}</p>
           <small>€ ${fmt(totalEUR)} total · Resta € ${fmt(restaEUR)}</small>
+          <small>${escapeHtml(meta.date)} ${escapeHtml(meta.time)}</small>
           ${brlLine}
 
           ${renderProgress(pagoEUR, totalEUR)}
