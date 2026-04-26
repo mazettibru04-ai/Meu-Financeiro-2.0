@@ -62,12 +62,13 @@
   <input type="number" id="modal-valor-pagar" placeholder="Valor a pagar" min="0" step="0.01">
 
   <select id="modal-moeda-pagamento">
-    <option value="EUR">EUR (€)</option>
-    <option value="BRL">BRL (R$)</option>
+    <option value="EUR">EUR</option>
+    <option value="BRL">BRL</option>
   </select>
 
   <button onclick="confirmarPagamento()">💸 Pagar</button>
 </div>
+      
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -173,11 +174,6 @@
         <option value="EUR">Euro (€)</option>
         <option value="BRL">Real (R$)</option>
       </select>
-      
-<select id="modal-moeda-pagamento">
-  <option value="EUR">EUR</option>
-  <option value="BRL">BRL</option>
-</select>
       
       <button onclick="salvarEdicao()" style="margin-bottom:8px">💾 Salvar alterações</button>
       <button class="btn-fechar" onclick="fecharModal('modal-edicao')">✕ Cancelar</button>
