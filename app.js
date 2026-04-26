@@ -367,7 +367,17 @@ window.confirmarPagamento = async function() {
 
   // 💱 conversão segura (SEM usar variáveis inexistentes)
   if (moedaPagamento !== data.moeda) {
-  const taxa = getTaxaHoje(data.moeda);
+  if (moedaPagamento !== data.moeda) {
+  const taxa = window.__rates?.BRL || 0;
+
+  if (moedaPagamento === "EUR" && data.moeda === "BRL") {
+    valorConvertido = valorInput * taxa;
+  }
+
+  if (moedaPagamento === "BRL" && data.moeda === "EUR") {
+    valorConvertido = valorInput / taxa;
+  }
+}
 
   if (moedaPagamento === "EUR" && data.moeda === "BRL") {
     valorConvertido = valorInput * taxa;
