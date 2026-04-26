@@ -296,18 +296,22 @@ window.abrirModalPagamento = function(id) {
 
   const taxa = data.taxaCambio || getTaxaHoje(data.moeda);
 
-const totalEUR = data.valorEUR ?? (
-  data.moeda === "EUR"
-    ? Number(data.valorOriginal)
-    : Number(data.valorOriginal) / taxa
-);
+  const totalEUR = data.valorEUR ?? (
+    data.moeda === "EUR"
+      ? Number(data.valorOriginal)
+      : Number(data.valorOriginal) / taxa
+  );
 
-const pagoEUR = data.moeda === "EUR"
-  ? Number(data.pago || 0)
-  : Number(data.pago || 0) / taxa;
-  const pagoEUR  = (data.pago || 0) / taxa;
+  const pagoEUR = data.moeda === "EUR"
+    ? Number(data.pago || 0)
+    : Number(data.pago || 0) / taxa;
+
   const restaEUR = Math.max(0, totalEUR - pagoEUR);
-  const pct      = Math.min(100, totalEUR > 0 ? Math.round((pagoEUR / totalEUR) * 100) : 0);
+
+  const pct = Math.min(
+    100,
+    totalEUR > 0 ? Math.round((pagoEUR / totalEUR) * 100) : 0
+  );
 
   document.getElementById("modal-nome").textContent       = data.desc;
   document.getElementById("modal-moeda-info").textContent = `${data.moeda} ${formatCurrency(data.valorOriginal)}`;
@@ -316,22 +320,24 @@ const pagoEUR = data.moeda === "EUR"
   document.getElementById("modal-resta").textContent      = `€ ${formatCurrency(restaEUR)}`;
   document.getElementById("modal-valor-pagar").value      = "";
 
-  const circum   = 2 * Math.PI * 60; // r=60 → 377
+  const circum   = 2 * Math.PI * 60;
   const ringFill = document.getElementById("ring-fill");
   const ringPct  = document.getElementById("ring-pct");
-  const cor      = pct >= 100 ? "#22c55e" : pct >= 50 ? "#f59e0b" : "#ef4444";
+
+  const cor = pct >= 100 ? "#22c55e" : pct >= 50 ? "#f59e0b" : "#ef4444";
 
   ringFill.style.stroke           = cor;
   ringPct.style.color             = cor;
   ringFill.style.strokeDashoffset = circum;
+
   setTimeout(() => {
     ringFill.style.strokeDashoffset = circum - (pct / 100) * circum;
   }, 80);
+
   ringPct.textContent = `${pct}%`;
 
   document.getElementById("modal-pagamento").classList.add("active");
 };
-
 // =====================
 // MODAL PAGAMENTO — confirmar
 // =====================
