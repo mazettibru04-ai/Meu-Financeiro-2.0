@@ -116,6 +116,13 @@ function toDateMeta(data) {
   };
 }
 
+function toUpdatedMeta(data) {
+  if (data?.updatedDate && data?.updatedTime) {
+    return { date: data.updatedDate, time: data.updatedTime };
+  }
+  return null;
+}
+
 function dayLabel(dateKey) {
   const date = parseDateKey(dateKey);
   if (!date) return "Data indisponível";
@@ -145,6 +152,12 @@ function formatDateTimeProfessional(meta) {
   const parsed = parseMetaDateTime(meta);
   if (!parsed) return "Data indisponível";
 
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const yesterday = new Date(today);
+  yesterday.setDate(yesterday.getDate() - 1);
+  const target = new Date(parsed.getFullYear(), parsed.getMonth(), parsed.getDate());
+
   const data = parsed.toLocaleDateString("pt-BR", {
     day: "2-digit",
     month: "2-digit",
@@ -156,7 +169,37 @@ function formatDateTimeProfessional(meta) {
     second: "2-digit"
   });
 
+  if (target.getTime() === today.getTime()) return `Hoje às ${hora}`;
+  if (target.getTime() === yesterday.getTime()) return `Ontem às ${hora}`;
   return `${data} às ${hora}`;
+}
+
+function formatCreatedLabel(meta) {
+  const parsed = parseMetaDateTime(meta);
+  if (!parsed) return "🟢 Adicionado em: Data indisponível";
+
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const target = new Date(parsed.getFullYear(), parsed.getMonth(), parsed.getDate());
+  const base = formatDateTimeProfessional(meta);
+
+  if (target.getTime() === today.getTime()) return `🟢 Adicionado hoje: ${base}`;
+  return `🟢 Adicionado em: ${base}`;
+}
+
+function formatUpdatedLabel(meta) {
+  if (!meta) return "";
+  const parsed = parseMetaDateTime(meta);
+  if (!parsed) return "🕓 Atualizado em: Data indisponível";
+  return `🕓 Atualizado em: ${formatDateTimeProfessional(meta)}`;
+}
+
+function buildUpdatedMeta(now = new Date()) {
+  return {
+    updatedAt: serverTimestamp(),
+    updatedDate: `${now.getFullYear()}-${pad2(now.getMonth() + 1)}-${pad2(now.getDate())}`,
+    updatedTime: `${pad2(now.getHours())}:${pad2(now.getMinutes())}:${pad2(now.getSeconds())}`
+  };
 }
 
 // =====================
@@ -401,7 +444,7 @@ window.confirmarPagamento = async function() {
   if (!ref) return;
 
   await runSafely(async () => {
-    await updateDoc(ref, { pago: novoPago });
+    await updateDoc(ref, { pago: novoPago, ...buildUpdatedMeta() });
     await registrarHistorico("💸 Pagamento realizado", data.desc, valorPagar, data.moeda);
 
     // Atualiza cache e recarrega modal com novos valores
@@ -449,7 +492,7 @@ window.salvarCorrecao = async function() {
   if (!ref) return;
 
   await runSafely(async () => {
-    await updateDoc(ref, { pago: novoValor });
+    await updateDoc(ref, { pago: novoValor, ...buildUpdatedMeta() });
     await registrarHistorico("🔧 Pagamento corrigido", data.desc, novoValor, data.moeda);
 
     guardar(corrigirDividaId, { ...data, pago: novoValor });
@@ -509,7 +552,7 @@ window.salvarEdicao = async function() {
   if (!ref) return;
 
   await runSafely(async () => {
-    await updateDoc(ref, { desc, val, moeda, categoria: cat });
+    await updateDoc(ref, { desc, val, moeda, categoria: cat, ...buildUpdatedMeta() });
     await registrarHistorico("✏️ Lançamento editado", desc, val, moeda);
     fecharModal("modal-edicao");
   }, "Falha ao salvar edição");
@@ -621,6 +664,10 @@ function iniciarStreamReceitas() {
       const safeCategoria = escapeHtml(r.categoria);
       const safeMoeda = escapeHtml(r.moeda);
       const meta = toDateMeta(r);
+      const updatedMeta = toUpdatedMeta(r);
+      const updatedLine = updatedMeta
+        ? `<small class="meta-updated">${escapeHtml(formatUpdatedLabel(updatedMeta))}</small>`
+        : "";
 
       html += `
         <div class="card">
@@ -628,7 +675,8 @@ function iniciarStreamReceitas() {
           <p>${safeCategoria}</p>
           <p>${safeMoeda} ${fmt(r.val)}</p>
           <small>€ ${fmt(v)}</small>
-          <small>${escapeHtml(formatDateTimeProfessional(meta))}</small>
+          <small class="meta-created">${escapeHtml(formatCreatedLabel(meta))}</small>
+          ${updatedLine}
           <div class="actions">
             <button class="btn-editar" onclick="abrirModalEdicao('receitas','${i.id}')">✏️ Editar</button>
             <button class="btn-remover" onclick="deletarItem('receitas','${i.id}','${descEsc}')">🗑️ Remover</button>
@@ -669,6 +717,10 @@ function iniciarStreamDespesas() {
       const safeCategoria = escapeHtml(d.categoria);
       const safeMoeda = escapeHtml(d.moeda);
       const meta = toDateMeta(d);
+      const updatedMeta = toUpdatedMeta(d);
+      const updatedLine = updatedMeta
+        ? `<small class="meta-updated">${escapeHtml(formatUpdatedLabel(updatedMeta))}</small>`
+        : "";
 
       html += `
         <div class="card">
@@ -676,7 +728,8 @@ function iniciarStreamDespesas() {
           <p>${safeCategoria}</p>
           <p>${safeMoeda} ${fmt(d.val)}</p>
           <small>€ ${fmt(v)}</small>
-          <small>${escapeHtml(formatDateTimeProfessional(meta))}</small>
+          <small class="meta-created">${escapeHtml(formatCreatedLabel(meta))}</small>
+          ${updatedLine}
           <div class="actions">
             <button class="btn-editar" onclick="abrirModalEdicao('despesas','${i.id}')">✏️ Editar</button>
             <button class="btn-remover" onclick="deletarItem('despesas','${i.id}','${descEsc}')">🗑️ Remover</button>
@@ -727,6 +780,10 @@ function iniciarStreamDividas() {
       const safeDesc = escapeHtml(d.desc);
       const safeMoeda = escapeHtml(d.moeda);
       const meta = toDateMeta(d);
+      const updatedMeta = toUpdatedMeta(d);
+      const updatedLine = updatedMeta
+        ? `<small class="meta-updated">${escapeHtml(formatUpdatedLabel(updatedMeta))}</small>`
+        : "";
 
       html += `
         <div class="card ${quitada ? "pago-total" : ""}">
@@ -736,7 +793,8 @@ function iniciarStreamDividas() {
           </strong>
           <p>${safeMoeda} ${fmt(d.valorOriginal)} · Pago: ${safeMoeda} ${fmt(d.pago || 0)}</p>
           <small>€ ${fmt(totalEUR)} total · Resta € ${fmt(restaEUR)}</small>
-          <small>${escapeHtml(formatDateTimeProfessional(meta))}</small>
+          <small class="meta-created">${escapeHtml(formatCreatedLabel(meta))}</small>
+          ${updatedLine}
           ${brlLine}
 
           ${renderProgress(pagoEUR, totalEUR)}
