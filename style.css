@@ -470,6 +470,82 @@ hr { border: none; border-top: 1px solid rgba(255,255,255,0.08); margin: 10px 0;
   font-size: 13px;
 }
 
+.parcelas-box {
+  margin: 10px 0 12px;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 12px;
+  padding: 10px;
+  background: rgba(15,23,42,0.55);
+}
+
+.parcelas-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #cbd5e1;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.parcelas-tools {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.parcelas-count {
+  background: rgba(56,189,248,0.16);
+  color: #7dd3fc;
+  border: 1px solid rgba(56,189,248,0.3);
+  border-radius: 999px;
+  padding: 1px 8px;
+}
+
+.lista-parcelas {
+  max-height: 150px;
+  overflow: auto;
+  padding-right: 2px;
+}
+
+.parcela-item {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 7px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  font-size: 12px;
+}
+
+.parcela-item:last-child { border-bottom: none; }
+.parcela-valor { color: #4ade80; font-weight: 700; }
+.parcela-data { color: #94a3b8; }
+.parcelas-empty { color: #94a3b8; margin: 0; font-size: 12px; }
+
+.btn-desfazer-parcela {
+  width: auto;
+  padding: 4px 9px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 700;
+  background: rgba(245,158,11,0.2);
+  color: #fcd34d;
+  border: 1px solid rgba(245,158,11,0.35);
+}
+
+.btn-desfazer-parcela:hover {
+  transform: none;
+  opacity: 1;
+  background: rgba(245,158,11,0.3);
+}
+
+.btn-desfazer-parcela:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
 .btn-fechar {
   width: 100%;
   background: rgba(255,255,255,0.05) !important;

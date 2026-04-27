@@ -63,6 +63,19 @@
         <button onclick="confirmarPagamento()">💸 Pagar</button>
       </div>
 
+      <div class="parcelas-box">
+        <div class="parcelas-head">
+          <span>Parcelas pagas</span>
+          <div class="parcelas-tools">
+            <span id="parcelas-count" class="parcelas-count">0</span>
+            <button id="btn-desfazer-parcela" class="btn-desfazer-parcela" onclick="desfazerUltimaParcela()">↩ Desfazer última</button>
+          </div>
+        </div>
+        <div id="lista-parcelas" class="lista-parcelas">
+          <p class="parcelas-empty">Nenhum pagamento registrado</p>
+        </div>
+      </div>
+
       <button class="btn-fechar" onclick="fecharModal('modal-pagamento')">✕ Fechar</button>
     </div>
   </div>

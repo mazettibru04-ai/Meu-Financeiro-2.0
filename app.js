@@ -188,6 +188,79 @@ function formatUpdatedLabel(meta) {
   return `🕓 Atualizado em: ${formatDateTimeProfessional(meta)}`;
 }
 
+function formatDateTimePt(date, time) {
+  return formatDateTimeProfessional({ date, time });
+}
+
+function getParcelasHistorico(data) {
+  if (!Array.isArray(data?.pagamentosHistorico)) return [];
+  return [...data.pagamentosHistorico]
+    .filter((item) => Number(item?.valor) > 0)
+    .sort((a, b) => Number(b?.criadoEm || 0) - Number(a?.criadoEm || 0));
+}
+
+function renderParcelasHistorico(data) {
+  const lista = document.getElementById("lista-parcelas");
+  const count = document.getElementById("parcelas-count");
+  const btnUndo = document.getElementById("btn-desfazer-parcela");
+  if (!lista || !count) return;
+
+  const parcelas = getParcelasHistorico(data);
+  count.textContent = String(parcelas.length);
+  if (btnUndo) btnUndo.disabled = parcelas.length === 0;
+
+  if (!parcelas.length) {
+    lista.innerHTML = `<p class="parcelas-empty">Nenhum pagamento registrado</p>`;
+    return;
+  }
+
+  const html = parcelas.map((p) => {
+    const valor = `${escapeHtml(data.moeda)} ${fmt(p.valor)}`;
+    const dt = escapeHtml(formatDateTimePt(p.date, p.time));
+    return `
+      <div class="parcela-item">
+        <span class="parcela-valor">💸 ${valor}</span>
+        <span class="parcela-data">${dt}</span>
+      </div>
+    `;
+  }).join("");
+
+  lista.innerHTML = html;
+}
+
+window.desfazerUltimaParcela = async function() {
+  if (!modalDividaId) return;
+  const data = recuperar(modalDividaId);
+  if (!data) return;
+
+  const parcelas = getParcelasHistorico(data);
+  if (!parcelas.length) return alert("Não há parcelas para desfazer.");
+
+  const ultima = parcelas[0];
+  if (!confirm(
+    `Desfazer a última parcela?\n` +
+    `Valor: ${data.moeda} ${fmt(ultima.valor)}\n` +
+    `Data: ${formatDateTimePt(ultima.date, ultima.time)}`
+  )) return;
+
+  const restantes = parcelas.slice(1);
+  const novoPago = restantes.reduce((acc, item) => acc + Number(item.valor || 0), 0);
+  const ref = getUserDoc("dividas", modalDividaId);
+  if (!ref) return;
+
+  await runSafely(async () => {
+    await updateDoc(ref, {
+      pago: novoPago,
+      pagamentosHistorico: restantes,
+      ...buildUpdatedMeta()
+    });
+
+    await registrarHistorico("↩ Parcela desfeita", data.desc, ultima.valor, data.moeda);
+    guardar(modalDividaId, { ...data, pago: novoPago, pagamentosHistorico: restantes });
+    abrirModalPagamento(modalDividaId);
+  }, "Falha ao desfazer parcela");
+};
+
 function buildUpdatedMeta(now = new Date()) {
   return {
     updatedAt: serverTimestamp(),
@@ -412,6 +485,7 @@ window.abrirModalPagamento = function(id) {
     ringFill.style.strokeDashoffset = circum - (pct / 100) * circum;
   }, 80);
   ringPct.textContent = `${pct}%`;
+  renderParcelasHistorico(data);
 
   document.getElementById("modal-pagamento").classList.add("active");
 };
@@ -437,12 +511,26 @@ window.confirmarPagamento = async function() {
   const ref = getUserDoc("dividas", modalDividaId);
   if (!ref) return;
 
+  const now = new Date();
+  const parcela = {
+    valor: valorPagar,
+    date: `${now.getFullYear()}-${pad2(now.getMonth() + 1)}-${pad2(now.getDate())}`,
+    time: `${pad2(now.getHours())}:${pad2(now.getMinutes())}:${pad2(now.getSeconds())}`,
+    criadoEm: now.getTime()
+  };
+  const historicoAtual = getParcelasHistorico(data);
+  const novoHistorico = [parcela, ...historicoAtual];
+
   await runSafely(async () => {
-    await updateDoc(ref, { pago: novoPago, ...buildUpdatedMeta() });
+    await updateDoc(ref, {
+      pago: novoPago,
+      pagamentosHistorico: novoHistorico,
+      ...buildUpdatedMeta()
+    });
     await registrarHistorico("💸 Pagamento realizado", data.desc, valorPagar, data.moeda);
 
     // Atualiza cache e recarrega modal com novos valores
-    guardar(modalDividaId, { ...data, pago: novoPago });
+    guardar(modalDividaId, { ...data, pago: novoPago, pagamentosHistorico: novoHistorico });
     abrirModalPagamento(modalDividaId);
   }, "Falha ao registrar pagamento");
 };
