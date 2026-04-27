@@ -68,6 +68,7 @@
           <span>Parcelas pagas</span>
           <div class="parcelas-tools">
             <span id="parcelas-count" class="parcelas-count">0</span>
+            <button id="btn-ver-parcelas" class="btn-ver-parcelas" onclick="abrirModalParcelas()">📜 Ver todas</button>
             <button id="btn-desfazer-parcela" class="btn-desfazer-parcela" onclick="desfazerUltimaParcela()">↩ Desfazer última</button>
           </div>
         </div>
@@ -77,6 +78,29 @@
       </div>
 
       <button class="btn-fechar" onclick="fecharModal('modal-pagamento')">✕ Fechar</button>
+    </div>
+  </div>
+
+  <!-- MODAL TODAS AS PARCELAS -->
+  <div class="modal-overlay" id="modal-parcelas">
+    <div class="modal modal-wide">
+      <p class="modal-title">📜 Histórico completo de parcelas</p>
+      <p class="modal-subtitle" id="parcelas-modal-subtitle">Dívida</p>
+
+      <div class="parcelas-monthly">
+        <p class="parcelas-monthly-title">Total por mês</p>
+        <div id="parcelas-mensal-lista"></div>
+      </div>
+
+      <div id="parcelas-completa-lista" class="lista-parcelas-completa"></div>
+
+      <div class="parcelas-paginacao">
+        <button id="parcelas-prev" onclick="trocarPaginaParcelas(-1)">◀ Anterior</button>
+        <span id="parcelas-page-info">Página 1</span>
+        <button id="parcelas-next" onclick="trocarPaginaParcelas(1)">Próxima ▶</button>
+      </div>
+
+      <button class="btn-fechar" onclick="fecharModal('modal-parcelas')">✕ Fechar</button>
     </div>
   </div>
 

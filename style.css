@@ -535,6 +535,23 @@ hr { border: none; border-top: 1px solid rgba(255,255,255,0.08); margin: 10px 0;
   border: 1px solid rgba(245,158,11,0.35);
 }
 
+.btn-ver-parcelas {
+  width: auto;
+  padding: 4px 9px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 700;
+  background: rgba(59,130,246,0.2);
+  color: #93c5fd;
+  border: 1px solid rgba(59,130,246,0.35);
+}
+
+.btn-ver-parcelas:hover {
+  transform: none;
+  opacity: 1;
+  background: rgba(59,130,246,0.3);
+}
+
 .btn-desfazer-parcela:hover {
   transform: none;
   opacity: 1;
@@ -544,6 +561,74 @@ hr { border: none; border-top: 1px solid rgba(255,255,255,0.08); margin: 10px 0;
 .btn-desfazer-parcela:disabled {
   opacity: 0.45;
   cursor: not-allowed;
+}
+
+.modal-wide { max-width: 560px; }
+
+.parcelas-monthly {
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 12px;
+  padding: 10px;
+  margin-bottom: 10px;
+  background: rgba(15,23,42,0.45);
+}
+
+.parcelas-monthly-title {
+  margin: 0 0 8px;
+  font-size: 12px;
+  color: #cbd5e1;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: 700;
+}
+
+.parcela-month-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 4px 0;
+  font-size: 12px;
+}
+
+.parcela-month-val {
+  color: #4ade80;
+  font-weight: 700;
+}
+
+.lista-parcelas-completa {
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 12px;
+  padding: 8px 10px;
+  max-height: 220px;
+  overflow: auto;
+  background: rgba(15,23,42,0.45);
+}
+
+.parcelas-paginacao {
+  margin-top: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.parcelas-paginacao button {
+  width: auto;
+  padding: 6px 10px;
+  border-radius: 8px;
+  font-size: 12px;
+  background: #334155;
+}
+
+.parcelas-paginacao button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+#parcelas-page-info {
+  font-size: 12px;
+  color: #cbd5e1;
+  font-weight: 700;
 }
 
 .btn-fechar {

@@ -50,6 +50,8 @@ let modalDividaId    = null;
 let corrigirDividaId = null;
 let editId           = null;
 let editColecao      = null;
+let parcelasPage     = 1;
+const PARCELAS_PAGE_SIZE = 10;
 
 // Unsubscribers dos listeners (para cancelar ao fazer logout)
 const unsubs = [];
@@ -443,15 +445,98 @@ window.fecharModal = function(id) {
   document.getElementById(id)?.classList.remove("active");
   if (id === "modal-pagamento") modalDividaId    = null;
   if (id === "modal-corrigir")  corrigirDividaId = null;
+  if (id === "modal-parcelas")  parcelasPage = 1;
   if (id === "modal-edicao")    { editId = null; editColecao = null; }
 };
 
 // Fechar clicando fora
-["modal-pagamento", "modal-corrigir", "modal-edicao"].forEach(id => {
+["modal-pagamento", "modal-corrigir", "modal-edicao", "modal-parcelas"].forEach(id => {
   document.getElementById(id)?.addEventListener("click", e => {
     if (e.target === e.currentTarget) fecharModal(id);
   });
 });
+
+function getParcelasPaginadas(parcelas, page) {
+  const start = (page - 1) * PARCELAS_PAGE_SIZE;
+  return parcelas.slice(start, start + PARCELAS_PAGE_SIZE);
+}
+
+function renderResumoMensalParcelas(parcelas, moeda) {
+  const el = document.getElementById("parcelas-mensal-lista");
+  if (!el) return;
+  if (!parcelas.length) {
+    el.innerHTML = `<p class="parcelas-empty">Sem dados mensais</p>`;
+    return;
+  }
+
+  const monthly = {};
+  parcelas.forEach((p) => {
+    const key = String(p.date || "").slice(0, 7) || "Data indefinida";
+    monthly[key] = (monthly[key] || 0) + Number(p.valor || 0);
+  });
+
+  const rows = Object.entries(monthly)
+    .sort((a, b) => b[0].localeCompare(a[0]))
+    .map(([month, total]) => `
+      <div class="parcela-month-row">
+        <span>${escapeHtml(month)}</span>
+        <span class="parcela-month-val">${escapeHtml(moeda)} ${fmt(total)}</span>
+      </div>
+    `)
+    .join("");
+
+  el.innerHTML = rows;
+}
+
+function renderModalParcelasPage() {
+  if (!modalDividaId) return;
+  const data = recuperar(modalDividaId);
+  if (!data) return;
+
+  const parcelas = getParcelasHistorico(data);
+  const totalPages = Math.max(1, Math.ceil(parcelas.length / PARCELAS_PAGE_SIZE));
+  if (parcelasPage > totalPages) parcelasPage = totalPages;
+  if (parcelasPage < 1) parcelasPage = 1;
+
+  const subtitle = document.getElementById("parcelas-modal-subtitle");
+  const listEl = document.getElementById("parcelas-completa-lista");
+  const pageInfo = document.getElementById("parcelas-page-info");
+  const prevBtn = document.getElementById("parcelas-prev");
+  const nextBtn = document.getElementById("parcelas-next");
+
+  if (subtitle) subtitle.textContent = data.desc;
+  renderResumoMensalParcelas(parcelas, data.moeda);
+
+  if (listEl) {
+    const current = getParcelasPaginadas(parcelas, parcelasPage);
+    if (!current.length) {
+      listEl.innerHTML = `<p class="parcelas-empty">Nenhuma parcela registrada</p>`;
+    } else {
+      listEl.innerHTML = current.map((p) => `
+        <div class="parcela-item">
+          <span class="parcela-valor">💸 ${escapeHtml(data.moeda)} ${fmt(p.valor)}</span>
+          <span class="parcela-data">${escapeHtml(formatDateTimePt(p.date, p.time))}</span>
+        </div>
+      `).join("");
+    }
+  }
+
+  if (pageInfo) pageInfo.textContent = `Página ${parcelasPage} de ${totalPages}`;
+  if (prevBtn) prevBtn.disabled = parcelasPage <= 1;
+  if (nextBtn) nextBtn.disabled = parcelasPage >= totalPages;
+}
+
+window.abrirModalParcelas = function() {
+  if (!modalDividaId) return;
+  parcelasPage = 1;
+  renderModalParcelasPage();
+  document.getElementById("modal-parcelas")?.classList.add("active");
+};
+
+window.trocarPaginaParcelas = function(direction) {
+  parcelasPage += direction;
+  renderModalParcelasPage();
+};
 
 // =====================
 // MODAL PAGAMENTO — abrir
