@@ -176,15 +176,9 @@ function formatDateTimeProfessional(meta) {
 
 function formatCreatedLabel(meta) {
   const parsed = parseMetaDateTime(meta);
-  if (!parsed) return "🟢 Adicionado em: Data indisponível";
-
-  const now = new Date();
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const target = new Date(parsed.getFullYear(), parsed.getMonth(), parsed.getDate());
+  if (!parsed) return "🟢 Adicionado: Data indisponível";
   const base = formatDateTimeProfessional(meta);
-
-  if (target.getTime() === today.getTime()) return `🟢 Adicionado hoje: ${base}`;
-  return `🟢 Adicionado em: ${base}`;
+  return `🟢 Adicionado: ${base}`;
 }
 
 function formatUpdatedLabel(meta) {
